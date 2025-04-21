@@ -1,0 +1,6 @@
+# Ignore folder
+.vscode
+.venv
+# Ignore files
+*.pyc
+*.mp3
