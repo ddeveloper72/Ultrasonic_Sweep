@@ -20,7 +20,7 @@ schumann_carrier = Sine(7.83).to_audio_segment(duration=music_duration).apply_ga
 dna_repair_tone = Sine(528).to_audio_segment(duration=10000).apply_gain(-6)
 ultrasonic_ping = Sine(17000).to_audio_segment(duration=500).apply_gain(-3)
 chirps = Sine(2500).to_audio_segment(duration=300).apply_gain(-3)
-ambient_pad = Sine(432).to_audio_segment(duration=music_duration).apply_gain(-9)	
+ambient_pad = Sine(432).to_audio_segment(duration=music_duration).apply_gain(-9)
 
 # Align the music file with the breath layer
 breath_layer_duration = music_duration
@@ -87,7 +87,7 @@ downsampled_freq = freq[::downsample_factor]
 downsampled_magnitude = magnitude[::downsample_factor]
 
 # Plot the charts
-plt.figure(figsize=(18, 12))
+plt.figure(figsize=(12, 6))
 
 # Waveform chart
 plt.subplot(3, 1, 1)
@@ -143,7 +143,8 @@ plt.title("Waveform of Pleiadian Contact Signal with Music")
 plt.xlabel("Sample Number (downsampled)")
 plt.ylabel("Amplitude")
 plt.grid()
-plt.legend(loc="upper right")  # Specify a fixed location for the legend
+plt.legend(loc="upper right")
+plt.subplots_adjust()
 
 # Frequency spectrum chart
 plt.subplot(3, 1, 2)
@@ -158,7 +159,8 @@ plt.title("Frequency Spectrum of Pleiadian Contact Signal with Music")
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Magnitude")
 plt.grid()
-plt.legend()
+plt.legend(loc="upper right")
+plt.subplots_adjust(hspace=0.5)
 
 # Amplitude envelope chart
 plt.subplot(3, 1, 3)
@@ -172,7 +174,14 @@ plt.title("Amplitude Envelope of Pleiadian Contact Signal with Music")
 plt.xlabel("Sample Number (downsampled)")
 plt.ylabel("Amplitude")
 plt.grid()
-plt.legend()
-
+plt.legend(loc="upper right")
 plt.tight_layout()
+plt.subplots_adjust(hspace=0.5, bottom=0.1)
+
+# Save the plot as an image file
+plt.savefig("Pleiadian_Contact_Signal_with_music_Plots.png", dpi=300)
+print(
+    "Plots saved as 'Pleiadian_Contact_Signal_with_music_Plots.png'"
+)
+# Show the plots
 plt.show()
