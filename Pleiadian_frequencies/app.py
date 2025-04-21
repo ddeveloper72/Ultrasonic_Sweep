@@ -70,7 +70,8 @@ downsampled_freq = freq[::downsample_factor]
 downsampled_magnitude = magnitude[::downsample_factor]
 
 # Plot the charts
-plt.figure(figsize=(18, 12))
+plt.figure(figsize=(12, 6))
+plt.subplots_adjust(hspace=0.5)
 
 # Waveform chart
 plt.subplot(3, 1, 1)
@@ -95,7 +96,8 @@ plt.title("Frequency Spectrum of Pleiadian Contact Signal")
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Magnitude")
 plt.grid()
-plt.legend()
+plt.legend(loc="upper right")
+plt.subplots_adjust(hspace=0.5)
 
 # Amplitude envelope chart
 plt.subplot(3, 1, 3)
@@ -104,7 +106,14 @@ plt.title("Amplitude Envelope of Pleiadian Contact Signal")
 plt.xlabel("Sample Number (downsampled)")
 plt.ylabel("Amplitude")
 plt.grid()
-plt.legend()
+plt.legend(loc="upper right")
+plt.subplots_adjust(hspace=0.5, bottom=0.1)
 
 plt.tight_layout()
+# Save the plot as an image file
+plt.savefig("Pleiadian_Contact_Signal_Plots.png", dpi=300)
+print(
+    "Plots saved as 'Pleiadian_Contact_Signal_Plots.png'"
+)  # Save the plot as an image file
+# Show the plots
 plt.show()
