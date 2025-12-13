@@ -88,6 +88,9 @@ def api_generate():
         })
         
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error generating signal: {error_trace}")
         return jsonify({
             'status': 'error',
             'message': str(e)

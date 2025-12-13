@@ -27,6 +27,14 @@ def apply_amplitude_modulation(carrier, modulator):
     Returns:
         AudioSegment with amplitude modulation applied
     """
+    # Convert both to mono to ensure compatibility
+    carrier = carrier.set_channels(1)
+    modulator = modulator.set_channels(1)
+    
+    # Ensure both signals have same sample rate
+    if carrier.frame_rate != modulator.frame_rate:
+        modulator = modulator.set_frame_rate(carrier.frame_rate)
+    
     # Ensure both signals are same length
     min_length = min(len(carrier), len(modulator))
     carrier = carrier[:min_length]
