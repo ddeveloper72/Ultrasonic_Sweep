@@ -209,6 +209,8 @@ function handleGenerateSignal() {
 
                 displaySignalInfo(data);
                 drawWaveform(data.waveform);
+                drawSpectrum(data.fft);
+                drawSpectrogram(data.waveform, data.duration_ms);
                 showDownloadButton(data.filename);
             } else {
                 alert('Error generating signal: ' + data.message);
@@ -256,7 +258,7 @@ function displaySignalInfo(data) {
 }
 
 function drawWaveform(waveformData) {
-    const canvas = document.getElementById('oscilloscope');
+    const canvas = document.getElementById('waveformCanvas');
     const ctx = canvas.getContext('2d');
 
     // Clear canvas
@@ -306,6 +308,119 @@ function drawWaveform(waveformData) {
 
     ctx.stroke();
 }
+
+function drawSpectrum(fftData) {
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const frequencies = fftData.frequencies;
+    const magnitudes = fftData.magnitudes;
+
+    // Draw frequency grid lines
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+
+    // Horizontal lines
+    for (let i = 0; i <= 4; i++) {
+        const y = (canvas.height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    // Draw spectrum bars
+    const barWidth = canvas.width / magnitudes.length;
+    
+    for (let i = 0; i < magnitudes.length; i++) {
+        const barHeight = magnitudes[i] * canvas.height * 0.9;
+        const x = i * barWidth;
+        const y = canvas.height - barHeight;
+
+        // Color gradient based on frequency
+        const hue = (i / magnitudes.length) * 240; // Blue to red
+        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        ctx.fillRect(x, y, barWidth - 1, barHeight);
+    }
+
+    // Draw frequency labels
+    ctx.fillStyle = '#0f0';
+    ctx.font = '12px monospace';
+    const labelFreqs = [100, 500, 1000, 5000, 10000, 15000];
+    labelFreqs.forEach(freq => {
+        const index = frequencies.findIndex(f => f >= freq);
+        if (index > 0) {
+            const x = (index / magnitudes.length) * canvas.width;
+            ctx.fillText(`${freq}Hz`, x, canvas.height - 5);
+        }
+    });
+}
+
+function drawSpectrogram(waveformData, durationMs) {
+    const canvas = document.getElementById('spectrogramCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Simple spectrogram: divide signal into time slices and show frequency content
+    const numSlices = 100;
+    const sliceSize = Math.floor(waveformData.length / numSlices);
+    const freqBins = 64;
+
+    for (let slice = 0; slice < numSlices; slice++) {
+        const start = slice * sliceSize;
+        const end = Math.min(start + sliceSize, waveformData.length);
+        const sliceData = waveformData.slice(start, end);
+
+        // Simple FFT approximation (rolling average for frequency bands)
+        for (let bin = 0; bin < freqBins; bin++) {
+            let energy = 0;
+            const binSize = Math.floor(sliceData.length / freqBins);
+            const binStart = bin * binSize;
+            
+            for (let i = 0; i < binSize && binStart + i < sliceData.length; i++) {
+                energy += Math.abs(sliceData[binStart + i]);
+            }
+            energy = energy / binSize;
+
+            // Draw pixel
+            const x = (slice / numSlices) * canvas.width;
+            const y = canvas.height - ((bin / freqBins) * canvas.height);
+            const intensity = Math.min(255, energy * 500);
+            
+            // Color map: blue (low) to yellow (medium) to red (high)
+            let r, g, b;
+            if (intensity < 128) {
+                r = 0;
+                g = 0;
+                b = intensity * 2;
+            } else {
+                r = (intensity - 128) * 2;
+                g = (intensity - 128) * 2;
+                b = 255 - ((intensity - 128) * 2);
+            }
+            
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillRect(x, y, canvas.width / numSlices + 1, canvas.height / freqBins + 1);
+        }
+    }
+
+    // Add labels
+    ctx.fillStyle = '#0f0';
+    ctx.font = '12px monospace';
+    ctx.fillText('Frequency →', 10, 20);
+    ctx.save();
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Time →', -canvas.height + 10, 20);
+    ctx.restore();
+}
+
 
 function handlePlay() {
     if (audioPlayer) {

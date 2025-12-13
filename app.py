@@ -78,12 +78,14 @@ def api_generate():
         
         # Get waveform data for visualization
         waveform_data = get_waveform_data(signal, samples=1000)
+        fft_data = get_fft_data(signal, bins=512)
         
         return jsonify({
             'status': 'success',
             'filename': output_filename,
             'metadata': metadata,
             'waveform': waveform_data,
+            'fft': fft_data,
             'duration_ms': len(signal)
         })
         
@@ -195,6 +197,44 @@ def get_waveform_data(audio_segment, samples=1000):
         normalized = downsampled
     
     return normalized.tolist()
+
+
+def get_fft_data(audio_segment, bins=512):
+    """Extract FFT data from AudioSegment for spectrum visualization"""
+    from scipy.fft import rfft, rfftfreq
+    
+    audio_array = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+    sample_rate = audio_segment.frame_rate
+    
+    # Take a chunk from the middle for analysis
+    chunk_size = min(8192, len(audio_array))
+    start = len(audio_array) // 2 - chunk_size // 2
+    chunk = audio_array[start:start + chunk_size]
+    
+    # Apply window function to reduce spectral leakage
+    window = np.hanning(len(chunk))
+    windowed = chunk * window
+    
+    # Compute FFT
+    fft_vals = rfft(windowed)
+    fft_freqs = rfftfreq(len(chunk), 1.0 / sample_rate)
+    
+    # Get magnitude
+    magnitudes = np.abs(fft_vals)
+    
+    # Downsample to bins
+    step = max(1, len(magnitudes) // bins)
+    freq_bins = fft_freqs[::step][:bins]
+    mag_bins = magnitudes[::step][:bins]
+    
+    # Normalize
+    if mag_bins.max() > 0:
+        mag_bins = mag_bins / mag_bins.max()
+    
+    return {
+        'frequencies': freq_bins.tolist(),
+        'magnitudes': mag_bins.tolist()
+    }
 
 
 if __name__ == '__main__':
