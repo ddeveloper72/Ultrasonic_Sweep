@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAP Signal Generator Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-broadcast"></i> UAP Signal Generator
+            </span>
+            <span class="badge bg-success">v2.0 - Hybrid Multi-Layer</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Left Panel: Presets and Configuration -->
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-collection"></i> Signal Presets
+                    </div>
+                    <div class="card-body">
+                        <select id="presetSelector" class="form-select mb-3">
+                            <option value="">Select a preset...</option>
+                            {% for key, preset in presets.items() %}
+                            <option value="{{ key }}">{{ preset.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div id="presetDescription" class="alert alert-info d-none"></div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-music-note-beamed"></i> Music Integration
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="useMusicSwitch">
+                            <label class="form-check-label" for="useMusicSwitch">
+                                Use Music Modulation
+                            </label>
+                        </div>
+
+                        <div id="musicSection" class="d-none">
+                            <label class="form-label">Select Music File:</label>
+                            <select id="musicFileSelector" class="form-select mb-2">
+                                <option value="">No music files available</option>
+                            </select>
+
+                            <div class="mb-2">
+                                <label for="musicUpload" class="form-label">Or Upload New:</label>
+                                <input type="file" class="form-control" id="musicUpload"
+                                    accept=".mp3,.mp4,.wav,.flac,.m4a">
+                            </div>
+
+                            <button class="btn btn-sm btn-outline-primary" id="uploadMusicBtn">
+                                <i class="bi bi-upload"></i> Upload Music
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-sliders"></i> Frequency Configuration
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Base Tone (Hz):</label>
+                            <input type="number" class="form-control freq-input" id="baseToneFreq" value="100" min="10"
+                                max="1000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Schumann Resonance (Hz):</label>
+                            <input type="number" class="form-control freq-input" id="schumannFreq" value="7.83"
+                                step="0.01" min="1" max="50">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">DNA Repair Tone (Hz):</label>
+                            <input type="number" class="form-control freq-input" id="dnaRepairFreq" value="528"
+                                min="100" max="1000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ambient Pad (Hz):</label>
+                            <input type="number" class="form-control freq-input" id="ambientFreq" value="432" min="100"
+                                max="1000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Chirp Frequency (Hz):</label>
+                            <input type="number" class="form-control freq-input" id="chirpFreq" value="2500" min="1000"
+                                max="5000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ultrasonic Ping (Hz):</label>
+                            <input type="number" class="form-control freq-input" id="ultrasonicFreq" value="17000"
+                                min="15000" max="20000">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-soundwave"></i> Modulation Settings
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="tremoloSwitch" checked>
+                            <label class="form-check-label" for="tremoloSwitch">
+                                Enable Tremolo (Earth Heartbeat)
+                            </label>
+                        </div>
+
+                        <div id="tremoloSettings">
+                            <label class="form-label">Tremolo Depth:</label>
+                            <input type="range" class="form-range" id="tremoloDepth" min="0" max="100" value="50">
+                            <div class="text-muted small">Depth: <span id="tremoloDepthValue">50</span>%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-lg btn-primary" id="generateBtn">
+                        <i class="bi bi-play-circle"></i> Generate Signal
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization and Output -->
+            <div class="col-md-8">
+                <div class="card mb-3">
+                    <div class="card-header bg-dark text-white">
+                        <i class="bi bi-graph-up"></i> Live Oscilloscope
+                    </div>
+                    <div class="card-body">
+                        <canvas id="oscilloscope" width="800" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-music-note-beamed"></i> Playback & Download
+                    </div>
+                    <div class="card-body">
+                        <div id="downloadSection" class="d-none">
+                            <audio id="audioPlayer" class="w-100 mb-3" controls></audio>
+
+                            <div class="btn-group w-100 mb-3" role="group">
+                                <button class="btn btn-primary" id="playBtn">
+                                    <i class="bi bi-play-fill"></i> Play
+                                </button>
+                                <button class="btn btn-warning" id="pauseBtn" disabled>
+                                    <i class="bi bi-pause-fill"></i> Pause
+                                </button>
+                                <button class="btn btn-danger" id="stopBtn" disabled>
+                                    <i class="bi bi-stop-fill"></i> Stop
+                                </button>
+                            </div>
+
+                            <button class="btn btn-success w-100" id="downloadBtn">
+                                <i class="bi bi-download"></i> Download Signal
+                            </button>
+                            <div id="downloadFilename" class="mt-2 text-muted"></div>
+                        </div>
+                        <div id="noSignal">
+                            <p class="text-muted">No signals generated yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="bi bi-info-circle"></i> Signal Information
+                    </div>
+                    <div class="card-body">
+                        <div id="signalInfo">
+                            <p class="text-muted">Generate a signal to see details...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-lightbulb"></i> About UAP Contact Signals
+                    </div>
+                    <div class="card-body">
+                        <h6>Signal Architecture:</h6>
+                        <ul>
+                            <li><strong>Foundation Layer:</strong> Base tone (100 Hz) + Schumann resonance (7.83 Hz)
+                            </li>
+                            <li><strong>Human Enhancement:</strong> Music-modulated DNA repair (528 Hz) + Ambient pad
+                                (432 Hz)</li>
+                            <li><strong>Attention Layer:</strong> Chirps (2500 Hz) + Ultrasonic pings (17 kHz)</li>
+                            <li><strong>Life Indicator:</strong> Filtered breath layer with tremolo</li>
+                        </ul>
+                        <p class="mb-0">
+                            <small class="text-muted">
+                                Based on UAP Dog Whistle research. Combines Earth's natural frequencies with human
+                                creativity.
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating UAP contact signal...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+
+</html>

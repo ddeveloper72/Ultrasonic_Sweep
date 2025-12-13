@@ -5,19 +5,22 @@ from pydub.effects import low_pass_filter
 import numpy as np
 from scipy.fftpack import fft
 from scipy.signal import hilbert
+import pydub
+import os
+import matplotlib.pyplot as plt
 
-# Removed redundant import of matplotlib.pyplot
+# Configure FFmpeg
+pydub.AudioSegment.converter = "C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe"
 
-# Load the music file
-music_file = AudioSegment.from_file(
-    "Gerry_Rafferty_Baker_Street_(UK).mp4", format="mp4"
-)  # Replace with the actual path
+# Load the music file from source_files directory
+music_file_path = os.path.join("source_files", "Gerry_Rafferty_Baker_Street_(UK).mp4")
+music_file = AudioSegment.from_file(music_file_path, format="mp4")
 music_duration = len(music_file)  # Get the duration of the music file in milliseconds
 
 # Generate other tones and layers with scaled durations
 base_tone = Sine(100).to_audio_segment(duration=music_duration).apply_gain(-6)
 schumann_carrier = Sine(7.83).to_audio_segment(duration=music_duration).apply_gain(-12)
-dna_repair_tone = Sine(528).to_audio_segment(duration=10000).apply_gain(-6)
+dna_repair_tone = Sine(528).to_audio_segment(duration=music_duration).apply_gain(-6)
 ultrasonic_ping = Sine(17000).to_audio_segment(duration=500).apply_gain(-3)
 chirps = Sine(2500).to_audio_segment(duration=300).apply_gain(-3)
 ambient_pad = Sine(432).to_audio_segment(duration=music_duration).apply_gain(-9)
@@ -29,17 +32,22 @@ breath_layer = low_pass_filter(
 ).apply_gain(-18)
 aligned_breath_layer = breath_layer[:music_duration]  # Align with music duration
 
+# Align Schumann carrier with music file (overlay to create tracking effect)
+aligned_schumann = music_file.overlay(schumann_carrier)
 
 # Create chirp sequence
 chirp_sequence = AudioSegment.silent(duration=music_duration)
 chirp_sequence = chirp_sequence.overlay(chirps, position=0)
-chirp_sequence = chirp_sequence.overlay(chirps, position=music_duration - 10000)
-
-# Combine all layers
-composite_signal = base_tone.overlay(schumann_carrier)
+if music_duration > 10000:
+    chirp_sequence = chirp_sequence.overlay(chirps, position=music_duration - 300)
 composite_signal = composite_signal.overlay(aligned_breath_layer)
 composite_signal = composite_signal.overlay(chirp_sequence)
-composite_signal = composite_signal.overlay(ultrasonic_ping, position=5000)
+composite_signal = composite_signal.overlay(ultrasonic_ping, position=min(5000, music_duration - 500))
+composite_signal = composite_signal.overlay(dna_repair_tone)
+composite_signal = composite_signal.overlay(ambient_pad)
+composite_signal = composite_signal.overlay(aligned_breath_layer)
+composite_signal = composite_signal.overlay(chirp_sequence)
+composite_signal = composite_signal.overlay(ultrasonic_ping, position=min(5000, music_duration - 500))
 
 # Export the final composite signal
 composite_signal.export("Pleiadian_Contact_Signal_With_Music.mp3", format="mp3")
@@ -48,7 +56,6 @@ print(
 )
 
 # Plot the waveform, frequency spectrum, and amplitude envelope of the final composite signal
-import matplotlib.pyplot as plt
 
 
 # Convert AudioSegment to numpy array for processing
@@ -81,11 +88,11 @@ amplitude_envelope = compute_amplitude_envelope(composite_array)
 
 # Downsample data for plotting
 downsample_factor = 10  # Take every 10th data point
-downsampled_composite_array = composite_array[::downsample_factor]
-downsampled_amplitude_envelope = amplitude_envelope[::downsample_factor]
-downsampled_freq = freq[::downsample_factor]
-downsampled_magnitude = magnitude[::downsample_factor]
+# Plot the charts
+plt.figure(figsize=(12, 8))
 
+# Waveform chart
+plt.subplot(3, 1, 1)
 # Plot the charts
 plt.figure(figsize=(12, 6))
 
@@ -176,12 +183,10 @@ plt.ylabel("Amplitude")
 plt.grid()
 plt.legend(loc="upper right")
 plt.tight_layout()
-plt.subplots_adjust(hspace=0.5, bottom=0.1)
 
 # Save the plot as an image file
 plt.savefig("Pleiadian_Contact_Signal_with_music_Plots.png", dpi=300)
-print(
-    "Plots saved as 'Pleiadian_Contact_Signal_with_music_Plots.png'"
-)
+print("Plots saved as 'Pleiadian_Contact_Signal_with_music_Plots.png'")
+
 # Show the plots
 plt.show()
