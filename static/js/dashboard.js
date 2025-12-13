@@ -168,6 +168,7 @@ function handleGenerateSignal() {
         chirp_freq: parseInt(document.getElementById('chirpFreq').value),
         ultrasonic_freq: parseInt(document.getElementById('ultrasonicFreq').value),
         use_music_modulation: document.getElementById('useMusicSwitch').checked,
+        use_music_as_foundation: document.getElementById('musicFoundationSwitch').checked,
         use_tremolo: document.getElementById('tremoloSwitch').checked,
         tremolo_depth: parseFloat(document.getElementById('tremoloDepth').value) / 100
     };
@@ -224,19 +225,29 @@ function displaySignalInfo(data) {
     const infoDiv = document.getElementById('signalInfo');
     const metadata = data.metadata;
 
+    // Format layer names for display
+    const foundationDesc = metadata.modulation.music_as_foundation
+        ? 'Music (primary carrier with subtle Schumann resonance overlay)'
+        : 'Base tone (100 Hz) + Schumann resonance (7.83 Hz)';
+
+    const humanEnhancementDesc = metadata.modulation.music_modulation
+        ? 'Music-modulated DNA repair (528 Hz) + Ambient pad (432 Hz)'
+        : 'DNA repair (528 Hz) + Ambient pad (432 Hz)';
+
     let html = `
         <h6>Signal Generated Successfully</h6>
         <p><strong>Duration:</strong> ${(data.duration_ms / 1000).toFixed(2)} seconds</p>
         <p><strong>Layers:</strong></p>
         <ul>
-            <li>Foundation: ${metadata.layers.foundation.join(', ')}</li>
-            <li>Human Enhancement: ${metadata.layers.human_enhancement.join(', ')}</li>
-            <li>Attention: ${metadata.layers.attention.join(', ')}</li>
-            <li>Life Indicator: ${metadata.layers.life_indicator.join(', ')}</li>
+            <li><strong>Foundation Layer:</strong> ${foundationDesc}</li>
+            <li><strong>Human Enhancement:</strong> ${humanEnhancementDesc}</li>
+            <li><strong>Attention Layer:</strong> Chirps (2500 Hz) + Ultrasonic pings (17 kHz)</li>
+            <li><strong>Life Indicator:</strong> Filtered breath layer with tremolo</li>
         </ul>
         <p><strong>Modulation:</strong></p>
         <ul>
             <li>Music Modulation: ${metadata.modulation.music_modulation ? 'Enabled' : 'Disabled'}</li>
+            <li>Music as Foundation: ${metadata.modulation.music_as_foundation ? 'Enabled' : 'Disabled'}</li>
             <li>Tremolo: ${metadata.modulation.tremolo ? 'Enabled (' + metadata.modulation.tremolo_rate + ' Hz)' : 'Disabled'}</li>
         </ul>
     `;

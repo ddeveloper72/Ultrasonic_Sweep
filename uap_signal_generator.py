@@ -124,6 +124,7 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
             'chirp_freq': 2500,
             'ambient_freq': 432,
             'use_music_modulation': True,
+            'use_music_as_foundation': False,
             'use_tremolo': True,
             'tremolo_depth': 0.5
         }
@@ -137,15 +138,21 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
         music_duration = duration_ms
     
     # LAYER 1: Foundation (Steady, Natural)
-    base_tone = Sine(config['base_tone_freq']).to_audio_segment(duration=music_duration).apply_gain(-6)
-    schumann_carrier = Sine(config['schumann_freq']).to_audio_segment(duration=music_duration).apply_gain(-12)
+    if config.get('use_music_as_foundation') and music_file:
+        # Use music as the foundation layer - keep it prominent
+        base_tone = music_file.apply_gain(-3)
+        schumann_carrier = Sine(config['schumann_freq']).to_audio_segment(duration=music_duration).apply_gain(-18)
+    else:
+        # Use synthetic tones as foundation
+        base_tone = Sine(config['base_tone_freq']).to_audio_segment(duration=music_duration).apply_gain(-6)
+        schumann_carrier = Sine(config['schumann_freq']).to_audio_segment(duration=music_duration).apply_gain(-12)
     
     # Apply slow tremolo to Schumann if enabled
     if config['use_tremolo']:
         schumann_carrier = apply_tremolo(schumann_carrier, rate=config['schumann_freq'], depth=0.3)
     
     # LAYER 2: Human Enhancement (Music-Modulated)
-    dna_repair_tone = Sine(config['dna_repair_freq']).to_audio_segment(duration=music_duration).apply_gain(-6)
+    dna_repair_tone = Sine(config['dna_repair_freq']).to_audio_segment(duration=music_duration).apply_gain(-9)
     ambient_pad = Sine(config['ambient_freq']).to_audio_segment(duration=music_duration).apply_gain(-9)
     
     if music_file and config['use_music_modulation']:
@@ -184,21 +191,23 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
     composite_signal = composite_signal.overlay(chirp_sequence)
     composite_signal = composite_signal.overlay(ultrasonic_ping, position=min(5000, music_duration - 500))
     
-    # Overlay music if present
-    if music_file:
+    # Overlay music if present and not used as foundation
+    if music_file and not config.get('use_music_as_foundation'):
         composite_signal = composite_signal.overlay(music_file.apply_gain(-3))
     
     # Metadata
+    foundation_layers = ['music_base', 'schumann_carrier'] if config.get('use_music_as_foundation') and music_file else ['base_tone', 'schumann_carrier']
     metadata = {
         'duration_ms': music_duration,
         'layers': {
-            'foundation': ['base_tone', 'schumann_carrier'],
+            'foundation': foundation_layers,
             'human_enhancement': ['dna_repair_tone', 'ambient_pad'],
             'attention': ['chirps', 'ultrasonic_ping'],
             'life_indicator': ['breath_layer']
         },
         'modulation': {
             'music_modulation': config['use_music_modulation'] and music_file is not None,
+            'music_as_foundation': config.get('use_music_as_foundation', False),
             'tremolo': config['use_tremolo'],
             'tremolo_rate': config['schumann_freq']
         }
