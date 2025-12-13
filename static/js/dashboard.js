@@ -5,6 +5,12 @@ let currentWaveform = null;
 let loadingModal = null;
 let audioPlayer = null;
 
+// Web Audio API variables
+let audioContext = null;
+let analyserNode = null;
+let sourceNode = null;
+let animationId = null;
+
 document.addEventListener('DOMContentLoaded', function () {
     loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
     audioPlayer = document.getElementById('audioPlayer');
@@ -50,11 +56,13 @@ function initializeEventListeners() {
             document.getElementById('playBtn').disabled = true;
             document.getElementById('pauseBtn').disabled = false;
             document.getElementById('stopBtn').disabled = false;
+            startRealtimeVisualization();
         });
 
         audioPlayer.addEventListener('pause', function () {
             document.getElementById('playBtn').disabled = false;
             document.getElementById('pauseBtn').disabled = true;
+            stopRealtimeVisualization();
         });
 
         audioPlayer.addEventListener('ended', function () {
@@ -446,6 +454,9 @@ function handleStop() {
         document.getElementById('playBtn').disabled = false;
         document.getElementById('pauseBtn').disabled = true;
         document.getElementById('stopBtn').disabled = true;
+        // Stop visualization and clear spectrogram
+        stopRealtimeVisualization();
+        spectrogramData = [];
     }
 }
 
@@ -468,3 +479,223 @@ function handleDownload() {
         window.location.href = `/api/download/${currentFilename}`;
     }
 }
+
+// ========== Real-time Visualization with Web Audio API ==========
+
+function startRealtimeVisualization() {
+    // Initialize Web Audio API if not already done
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyserNode = audioContext.createAnalyser();
+        analyserNode.fftSize = 2048;
+        
+        // Connect audio element to analyser
+        if (!sourceNode) {
+            sourceNode = audioContext.createMediaElementSource(audioPlayer);
+            sourceNode.connect(analyserNode);
+            analyserNode.connect(audioContext.destination);
+        }
+    }
+    
+    // Resume audio context if suspended
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    
+    // Start animation loop
+    animateVisualizations();
+}
+
+function stopRealtimeVisualization() {
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+}
+
+function animateVisualizations() {
+    animationId = requestAnimationFrame(animateVisualizations);
+    
+    // Get current active tab
+    const activeTab = document.querySelector('#visualizationTabs .nav-link.active');
+    const activeTabId = activeTab ? activeTab.id : 'waveform-tab';
+    
+    // Update only the active visualization for performance
+    if (activeTabId === 'waveform-tab') {
+        drawRealtimeWaveform();
+    } else if (activeTabId === 'spectrum-tab') {
+        drawRealtimeSpectrum();
+    } else if (activeTabId === 'spectrogram-tab') {
+        drawRealtimeSpectrogram();
+    }
+}
+
+function drawRealtimeWaveform() {
+    const canvas = document.getElementById('waveformCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const bufferLength = analyserNode.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
+    analyserNode.getByteTimeDomainData(dataArray);
+    
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = (canvas.height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    for (let i = 0; i <= 8; i++) {
+        const x = (canvas.width / 8) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    
+    // Draw waveform
+    ctx.strokeStyle = '#0f0';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    const sliceWidth = canvas.width / bufferLength;
+    let x = 0;
+    
+    for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+        
+        x += sliceWidth;
+    }
+    
+    ctx.stroke();
+}
+
+function drawRealtimeSpectrum() {
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const bufferLength = analyserNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyserNode.getByteFrequencyData(dataArray);
+    
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = (canvas.height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    
+    // Draw spectrum bars
+    const barWidth = canvas.width / bufferLength;
+    
+    for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * canvas.height * 0.9;
+        const x = i * barWidth;
+        const y = canvas.height - barHeight;
+        
+        // Color gradient based on frequency
+        const hue = (i / bufferLength) * 240;
+        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        ctx.fillRect(x, y, barWidth - 1, barHeight);
+    }
+    
+    // Draw frequency labels in waterfall/stepped pattern
+    ctx.fillStyle = '#0f0';
+    ctx.font = '12px monospace';
+    const sampleRate = audioContext.sampleRate;
+    const labelFreqs = [100, 500, 1000, 5000, 10000, 15000];
+    labelFreqs.forEach((freq, idx) => {
+        if (freq < sampleRate / 2) {
+            const index = Math.floor((freq / (sampleRate / 2)) * bufferLength);
+            const x = (index / bufferLength) * canvas.width;
+            // Stagger labels vertically in steps
+            const yOffset = (idx % 3) * 15; // 3-level waterfall
+            ctx.fillText(`${freq >= 1000 ? freq/1000 + 'kHz' : freq + 'Hz'}`, x, canvas.height - 5 - yOffset);
+        }
+    });
+}
+
+let spectrogramData = [];
+const spectrogramMaxSlices = 100;
+
+function drawRealtimeSpectrogram() {
+    const canvas = document.getElementById('spectrogramCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const bufferLength = analyserNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyserNode.getByteFrequencyData(dataArray);
+    
+    // Add new frequency data slice
+    const slice = Array.from(dataArray);
+    spectrogramData.push(slice);
+    
+    // Keep only recent slices
+    if (spectrogramData.length > spectrogramMaxSlices) {
+        spectrogramData.shift();
+    }
+    
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw spectrogram
+    const sliceWidth = canvas.width / spectrogramData.length;
+    const binHeight = canvas.height / bufferLength;
+    
+    for (let i = 0; i < spectrogramData.length; i++) {
+        for (let j = 0; j < bufferLength; j++) {
+            const value = spectrogramData[i][j];
+            const intensity = value / 255;
+            
+            // Color map: blue (low) to yellow (medium) to red (high)
+            let r, g, b;
+            if (intensity < 0.5) {
+                r = 0;
+                g = 0;
+                b = intensity * 2 * 255;
+            } else {
+                r = (intensity - 0.5) * 2 * 255;
+                g = (intensity - 0.5) * 2 * 255;
+                b = 255 - ((intensity - 0.5) * 2 * 255);
+            }
+            
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            const x = i * sliceWidth;
+            const y = canvas.height - (j * binHeight);
+            ctx.fillRect(x, y, sliceWidth + 1, binHeight + 1);
+        }
+    }
+    
+    // Add labels
+    ctx.fillStyle = '#0f0';
+    ctx.font = '12px monospace';
+    ctx.fillText('Time →', canvas.width - 60, canvas.height - 15);
+    ctx.save();
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Frequency →', -canvas.height + 10, 15);
+    ctx.restore();
+}
+
