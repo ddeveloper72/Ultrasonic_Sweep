@@ -3,7 +3,7 @@
 UAP Signal Generator Flask Application
 Interactive dashboard for customizing and generating UAP contact signals
 """
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, Response, stream_with_context
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -12,11 +12,19 @@ from uap_signal_generator import generate_hybrid_uap_signal, apply_amplitude_mod
 from signal_presets import get_all_presets, get_preset
 from pydub import AudioSegment
 import io
+import threading
+import queue
+import uuid
+import yt_dlp
+import re
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 app.config['UPLOAD_FOLDER'] = 'source_files'
 app.config['OUTPUT_FOLDER'] = 'generated_signals'
+
+# Store progress data for each generation task
+generation_progress = {}
 
 # Ensure output directory exists
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
@@ -50,9 +58,43 @@ def api_preset(preset_name):
 
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
-    """Generate signal based on configuration"""
+    """Initiate signal generation and return task ID"""
     try:
         data = request.json
+        task_id = str(uuid.uuid4())
+        
+        # Store task info
+        generation_progress[task_id] = {
+            'progress': 0,
+            'message': 'Initializing...',
+            'status': 'running',
+            'result': None,
+            'error': None
+        }
+        
+        # Start generation in background thread
+        thread = threading.Thread(target=generate_signal_task, args=(task_id, data))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'task_id': task_id
+        })
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error starting generation: {error_trace}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+def generate_signal_task(task_id, data):
+    """Background task to generate signal with progress updates"""
+    try:
         config = data.get('config', {})
         use_music = data.get('use_music', False)
         music_file = data.get('music_file', None)
@@ -64,39 +106,67 @@ def api_generate():
             if not os.path.exists(music_path):
                 music_path = None
         
-        # Generate signal
+        # Progress callback
+        def update_progress(progress, message):
+            generation_progress[task_id]['progress'] = progress
+            generation_progress[task_id]['message'] = message
+        
+        # Generate signal with progress tracking
         signal, metadata = generate_hybrid_uap_signal(
             music_file_path=music_path,
             duration_ms=int(data.get('duration', 10000)),
-            config=config
+            config=config,
+            progress_callback=update_progress
         )
         
         # Save to file
+        update_progress(97, 'Exporting to MP3...')
         output_filename = f"UAP_Signal_{data.get('preset_name', 'custom')}.mp3"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         signal.export(output_path, format="mp3")
         
-        # Get waveform data for visualization
+        # Get visualization data
+        update_progress(99, 'Generating visualizations...')
         waveform_data = get_waveform_data(signal, samples=1000)
         fft_data = get_fft_data(signal, bins=512)
         
-        return jsonify({
-            'status': 'success',
+        # Update task with result
+        generation_progress[task_id]['status'] = 'completed'
+        generation_progress[task_id]['progress'] = 100
+        generation_progress[task_id]['message'] = 'Complete!'
+        generation_progress[task_id]['result'] = {
             'filename': output_filename,
             'metadata': metadata,
             'waveform': waveform_data,
             'fft': fft_data,
             'duration_ms': len(signal)
-        })
+        }
         
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
-        print(f"Error generating signal: {error_trace}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
+        print(f"Error in generation task: {error_trace}")
+        generation_progress[task_id]['status'] = 'error'
+        generation_progress[task_id]['error'] = str(e)
+
+
+@app.route('/api/progress/<task_id>')
+def api_progress(task_id):
+    """Stream progress updates via Server-Sent Events"""
+    def generate():
+        while task_id in generation_progress:
+            task_data = generation_progress[task_id]
+            yield f"data: {json.dumps(task_data)}\n\n"
+            
+            if task_data['status'] in ['completed', 'error']:
+                # Clean up after a delay
+                threading.Timer(5.0, lambda: generation_progress.pop(task_id, None)).start()
+                break
+            
+            import time
+            time.sleep(0.5)  # Update every 500ms
+    
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
 
 @app.route('/api/download/<filename>')
@@ -136,6 +206,94 @@ def api_upload_music():
         })
     
     return jsonify({'status': 'error', 'message': 'Invalid file type'}), 400
+
+
+@app.route('/api/download_youtube', methods=['POST'])
+def api_download_youtube():
+    """Download audio from YouTube URL"""
+    try:
+        data = request.json
+        youtube_url = data.get('url', '').strip()
+        
+        if not youtube_url:
+            return jsonify({'status': 'error', 'message': 'No URL provided'}), 400
+        
+        # Validate YouTube URL
+        youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/'
+        if not re.match(youtube_regex, youtube_url):
+            return jsonify({'status': 'error', 'message': 'Invalid YouTube URL'}), 400
+        
+        # Generate unique filename
+        video_id = extract_video_id(youtube_url)
+        output_filename = f"youtube_{video_id}.mp3"
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
+        
+        # Check if already downloaded
+        if os.path.exists(output_path):
+            audio = AudioSegment.from_file(output_path)
+            return jsonify({
+                'status': 'success',
+                'filename': output_filename,
+                'duration_ms': len(audio),
+                'duration_seconds': len(audio) / 1000,
+                'cached': True
+            })
+        
+        # Download audio using yt-dlp
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl': os.path.join(app.config['UPLOAD_FOLDER'], f'youtube_{video_id}.%(ext)s'),
+            'quiet': True,
+            'no_warnings': True,
+            'ffmpeg_location': 'C:\\Users\\Duncan\\FFmpeg\\bin'
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=True)
+            title = info.get('title', 'Unknown')
+        
+        # Get audio duration
+        audio = AudioSegment.from_file(output_path)
+        duration_ms = len(audio)
+        
+        return jsonify({
+            'status': 'success',
+            'filename': output_filename,
+            'title': title,
+            'duration_ms': duration_ms,
+            'duration_seconds': duration_ms / 1000,
+            'cached': False
+        })
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error downloading YouTube audio: {error_trace}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to download audio: {str(e)}'
+        }), 500
+
+
+def extract_video_id(url):
+    """Extract video ID from YouTube URL"""
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
+        r'(?:embed\/)([0-9A-Za-z_-]{11})',
+        r'(?:watch\?v=)([0-9A-Za-z_-]{11})'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
+    return 'unknown'
 
 
 @app.route('/api/list_music')

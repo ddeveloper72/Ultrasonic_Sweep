@@ -102,7 +102,7 @@ def apply_tremolo(audio, rate=7.83, depth=0.5):
     )
 
 
-def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=None):
+def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=None, progress_callback=None):
     """
     Generate hybrid multi-layer UAP contact signal
     
@@ -110,6 +110,7 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
         music_file_path: Path to music file (optional)
         duration_ms: Duration in milliseconds if no music file
         config: Dictionary with tone configurations
+        progress_callback: Optional callback function(progress, message) for progress updates
     
     Returns:
         Tuple of (composite_signal, metadata)
@@ -130,12 +131,18 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
         }
     
     # Load music file if provided
+    if progress_callback:
+        progress_callback(5, 'Loading music file...')
+    
     if music_file_path and os.path.exists(music_file_path):
         music_file = AudioSegment.from_file(music_file_path)
         music_duration = len(music_file)
     else:
         music_file = None
         music_duration = duration_ms
+    
+    if progress_callback:
+        progress_callback(15, 'Generating foundation layers...')
     
     # LAYER 1: Foundation (Steady, Natural)
     if config.get('use_music_as_foundation') and music_file:
@@ -151,14 +158,22 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
     if config['use_tremolo']:
         schumann_carrier = apply_tremolo(schumann_carrier, rate=config['schumann_freq'], depth=0.3)
     
+    if progress_callback:
+        progress_callback(30, 'Creating human enhancement layers...')
+    
     # LAYER 2: Human Enhancement (Music-Modulated)
     dna_repair_tone = Sine(config['dna_repair_freq']).to_audio_segment(duration=music_duration).apply_gain(-9)
     ambient_pad = Sine(config['ambient_freq']).to_audio_segment(duration=music_duration).apply_gain(-9)
     
     if music_file and config['use_music_modulation']:
+        if progress_callback:
+            progress_callback(45, 'Applying music modulation...')
         # Music modulates DNA repair and ambient pad - showing human creativity
         dna_repair_tone = apply_amplitude_modulation(dna_repair_tone, music_file)
         ambient_pad = apply_amplitude_modulation(ambient_pad, music_file)
+    
+    if progress_callback:
+        progress_callback(60, 'Generating attention signals...')
     
     # LAYER 3: Attention Signals (Pulsing/Organic)
     ultrasonic_ping = Sine(config['ultrasonic_freq']).to_audio_segment(duration=500).apply_gain(-3)
@@ -168,11 +183,16 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
     if config['use_tremolo']:
         chirps = apply_tremolo(chirps, rate=config['schumann_freq'], depth=config['tremolo_depth'])
     
-    # Create chirp sequence
+    # Create chirp sequence - repeat throughout the duration
     chirp_sequence = AudioSegment.silent(duration=music_duration)
-    chirp_sequence = chirp_sequence.overlay(chirps, position=0)
-    if music_duration > 10000:
-        chirp_sequence = chirp_sequence.overlay(chirps, position=music_duration - 300)
+    chirp_interval = 2000  # Place a chirp every 2 seconds
+    position = 0
+    while position < music_duration:
+        chirp_sequence = chirp_sequence.overlay(chirps, position=position)
+        position += chirp_interval
+    
+    if progress_callback:
+        progress_callback(70, 'Creating life indicator layer...')
     
     # LAYER 4: Breath Layer (Life Indicator)
     breath_layer = low_pass_filter(
@@ -183,17 +203,31 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
     if config['use_tremolo']:
         breath_layer = apply_tremolo(breath_layer, rate=config['schumann_freq'], depth=0.4)
     
+    # Create ultrasonic ping sequence - repeat throughout the duration
+    ultrasonic_sequence = AudioSegment.silent(duration=music_duration)
+    ping_interval = 3500  # Place an ultrasonic ping every 3.5 seconds
+    position = 0
+    while position < music_duration - 500:  # Ensure last ping fits
+        ultrasonic_sequence = ultrasonic_sequence.overlay(ultrasonic_ping, position=position)
+        position += ping_interval
+    
+    if progress_callback:
+        progress_callback(80, 'Mixing all signal layers...')
+    
     # Combine all layers
     composite_signal = base_tone.overlay(schumann_carrier)
     composite_signal = composite_signal.overlay(dna_repair_tone)
     composite_signal = composite_signal.overlay(ambient_pad)
     composite_signal = composite_signal.overlay(breath_layer)
     composite_signal = composite_signal.overlay(chirp_sequence)
-    composite_signal = composite_signal.overlay(ultrasonic_ping, position=min(5000, music_duration - 500))
+    composite_signal = composite_signal.overlay(ultrasonic_sequence)
     
     # Overlay music if present and not used as foundation
     if music_file and not config.get('use_music_as_foundation'):
         composite_signal = composite_signal.overlay(music_file.apply_gain(-3))
+    
+    if progress_callback:
+        progress_callback(95, 'Finalizing signal...')
     
     # Metadata
     foundation_layers = ['music_base', 'schumann_carrier'] if config.get('use_music_as_foundation') and music_file else ['base_tone', 'schumann_carrier']

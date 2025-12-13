@@ -3,6 +3,7 @@
 let currentFilename = null;
 let currentWaveform = null;
 let loadingModal = null;
+let progressInterval = null;
 let audioPlayer = null;
 
 // Web Audio API variables
@@ -28,6 +29,9 @@ function initializeEventListeners() {
 
     // Upload music button
     document.getElementById('uploadMusicBtn').addEventListener('click', handleMusicUpload);
+    
+    // Download YouTube button
+    document.getElementById('downloadYoutubeBtn').addEventListener('click', handleYoutubeDownload);
 
     // Tremolo depth slider
     document.getElementById('tremoloDepth').addEventListener('input', function (e) {
@@ -111,7 +115,7 @@ function handleMusicSwitchChange(e) {
 }
 
 function loadMusicFiles() {
-    fetch('/api/list_music')
+    return fetch('/api/list_music')
         .then(response => response.json())
         .then(data => {
             const selector = document.getElementById('musicFileSelector');
@@ -128,7 +132,10 @@ function loadMusicFiles() {
                 selector.innerHTML = '<option value="">No music files available</option>';
             }
         })
-        .catch(error => console.error('Error loading music files:', error));
+        .catch(error => {
+            console.error('Error loading music files:', error);
+            throw error;
+        });
 }
 
 function handleMusicUpload() {
@@ -167,6 +174,63 @@ function handleMusicUpload() {
         });
 }
 
+function handleYoutubeDownload() {
+    const urlInput = document.getElementById('youtubeUrl');
+    const url = urlInput.value.trim();
+
+    if (!url) {
+        alert('Please enter a YouTube URL');
+        return;
+    }
+
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+        alert('Please enter a valid YouTube URL');
+        return;
+    }
+
+    loadingModal.show();
+    document.getElementById('progressText').textContent = 'Downloading audio from YouTube...';
+
+    fetch('/api/download_youtube', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: url })
+    })
+        .then(response => response.json())
+        .then(data => {
+            loadingModal.hide();
+            if (data.status === 'success') {
+                const cacheMsg = data.cached ? ' (from cache)' : '';
+                const title = data.title ? `"${data.title}"` : 'Audio';
+                alert(`${title} downloaded successfully!${cacheMsg}\nDuration: ${Math.round(data.duration_seconds)} seconds`);
+                
+                // Reload music files and auto-select the new one
+                loadMusicFiles().then(() => {
+                    const selector = document.getElementById('musicFileSelector');
+                    selector.value = data.filename;
+                    
+                    // Enable music switch if not already enabled
+                    const musicSwitch = document.getElementById('useMusicSwitch');
+                    if (!musicSwitch.checked) {
+                        musicSwitch.checked = true;
+                        handleMusicSwitchChange({ target: musicSwitch });
+                    }
+                });
+                
+                urlInput.value = '';
+            } else {
+                alert('Error downloading YouTube audio: ' + data.message);
+            }
+        })
+        .catch(error => {
+            loadingModal.hide();
+            console.error('Error downloading YouTube audio:', error);
+            alert('Error downloading YouTube audio: ' + error.message);
+        });
+}
+
 function handleGenerateSignal() {
     const config = {
         base_tone_freq: parseInt(document.getElementById('baseToneFreq').value),
@@ -193,7 +257,8 @@ function handleGenerateSignal() {
         duration: 10000
     };
 
-    loadingModal.show();
+    const hasMusic = useMusic && musicFile;
+    showProgressModal(hasMusic);
 
     fetch('/api/generate', {
         method: 'POST',
@@ -209,26 +274,109 @@ function handleGenerateSignal() {
             return response.json();
         })
         .then(data => {
-            loadingModal.hide();
-            console.log('Generation response:', data);
-            if (data.status === 'success') {
-                currentFilename = data.filename;
-                currentWaveform = data.waveform;
-
-                displaySignalInfo(data);
-                drawWaveform(data.waveform);
-                drawSpectrum(data.fft);
-                drawSpectrogram(data.waveform, data.duration_ms);
-                showDownloadButton(data.filename);
-            } else {
-                alert('Error generating signal: ' + data.message);
+            if (data.status === 'started') {
+                // Start listening to progress updates
+                listenToProgress(data.task_id);
+            } else if (data.status === 'error') {
+                hideProgressModal();
+                alert('Error starting generation: ' + data.message);
             }
         })
         .catch(error => {
-            loadingModal.hide();
-            console.error('Error generating signal:', error);
-            alert('Error generating signal: ' + error.message);
+            hideProgressModal();
+            console.error('Error starting generation:', error);
+            alert('Error starting generation: ' + error.message);
         });
+}
+
+function listenToProgress(taskId) {
+    const eventSource = new EventSource(`/api/progress/${taskId}`);
+    
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        updateProgressDisplay(data.progress, data.message);
+        
+        if (data.status === 'completed' && data.result) {
+            eventSource.close();
+            hideProgressModal();
+            
+            // Display the results
+            currentFilename = data.result.filename;
+            currentWaveform = data.result.waveform;
+            displaySignalInfo(data.result);
+            drawWaveform(data.result.waveform);
+            drawSpectrum(data.result.fft);
+            drawSpectrogram(data.result.waveform, data.result.duration_ms);
+            showDownloadButton(data.result.filename);
+            
+        } else if (data.status === 'error') {
+            eventSource.close();
+            hideProgressModal();
+            alert('Error generating signal: ' + data.error);
+        }
+    };
+    
+    eventSource.onerror = function(error) {
+        console.error('SSE error:', error);
+        eventSource.close();
+        hideProgressModal();
+        alert('Connection error during signal generation');
+    };
+}
+
+function updateProgressDisplay(progress, message) {
+    const progressBar = document.getElementById('progressBar');
+    const progressSpinner = document.getElementById('progressSpinner');
+    const progressText = document.getElementById('progressText');
+    
+    const opacity = 0.2 + (progress / 100) * 0.8;  // 20% to 100% opacity
+    
+    progressBar.style.width = progress + '%';
+    progressBar.textContent = Math.round(progress) + '%';
+    progressBar.setAttribute('aria-valuenow', progress);
+    progressSpinner.style.opacity = opacity;
+    progressText.textContent = message;
+}
+
+function showProgressModal(withMusic = false) {
+    const progressBar = document.getElementById('progressBar');
+    const progressSpinner = document.getElementById('progressSpinner');
+    const progressText = document.getElementById('progressText');
+    
+    // Reset progress
+    progressBar.style.width = '0%';
+    progressBar.textContent = '0%';
+    progressBar.setAttribute('aria-valuenow', '0');
+    progressSpinner.style.opacity = '0.2';
+    progressText.textContent = 'Initializing...';
+    
+    loadingModal.show();
+    
+    // Clear any existing simulated interval
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+}
+
+function hideProgressModal() {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+    
+    // Complete the progress bar
+    const progressBar = document.getElementById('progressBar');
+    const progressSpinner = document.getElementById('progressSpinner');
+    progressBar.style.width = '100%';
+    progressBar.textContent = '100%';
+    progressBar.setAttribute('aria-valuenow', '100');
+    progressSpinner.style.opacity = '1';
+    
+    // Hide after a brief moment to show completion
+    setTimeout(() => {
+        loadingModal.hide();
+    }, 300);
 }
 
 function displaySignalInfo(data) {
