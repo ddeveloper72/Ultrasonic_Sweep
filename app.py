@@ -516,8 +516,6 @@ def api_list_music():
         except Exception as e:
             print(f"Error reading music file {filename}: {e}")
             continue
-            except:
-                pass
     
     return jsonify({'files': files})
 
