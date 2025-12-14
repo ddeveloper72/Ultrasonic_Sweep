@@ -158,57 +158,64 @@ def generate_signal_task(task_id, data):
             generation_progress[task_id]['progress'] = progress
             generation_progress[task_id]['message'] = message
         
-        try:
-            # Generate signal with progress tracking
-            signal, metadata = generate_hybrid_uap_signal(
-                music_file_path=music_path,
-                duration_ms=int(data.get('duration', 10000)),
-                config=config,
-                progress_callback=update_progress
-            )
-            
-            # Export to in-memory buffer instead of file
-            update_progress(97, 'Exporting to MP3...')
-            output_filename = f"UAP_Signal_{data.get('preset_name', 'custom')}.mp3"
-            
-            # Create in-memory buffer
-            mp3_buffer = io.BytesIO()
-            signal.export(mp3_buffer, format="mp3")
-            mp3_buffer.seek(0)  # Reset buffer position to start
-            
-            # Get visualization data
-            update_progress(99, 'Generating visualizations...')
-            waveform_data = get_waveform_data(signal, samples=1000)
-            fft_data = get_fft_data(signal, bins=512)
-            
-            print(f"[TASK {task_id}] Generation complete!")
-            
-            # Update task with result (store buffer instead of filename)
-            generation_progress[task_id]['status'] = 'completed'
-            generation_progress[task_id]['progress'] = 100
-            generation_progress[task_id]['message'] = 'Complete!'
-            generation_progress[task_id]['result'] = {
-                'filename': output_filename,
-                'metadata': metadata,
-                'waveform': waveform_data,
-                'fft': fft_data,
-                'mp3_data': mp3_buffer.getvalue(),  # Store raw bytes
-                'duration_ms': len(signal)
-            }
+        # Generate signal with progress tracking
+        signal, metadata = generate_hybrid_uap_signal(
+            music_file_path=music_path,
+            duration_ms=int(data.get('duration', 10000)),
+            config=config,
+            progress_callback=update_progress
+        )
         
-        finally:
-            # Clean up temporary music file if created
-            if temp_music_file and os.path.exists(music_path):
-                try:
-                    os.unlink(music_path)
-                    print(f"[TASK {task_id}] Cleaned up temporary music file: {music_path}")
-                except Exception as cleanup_error:
-                    print(f"[TASK {task_id}] Warning: Failed to cleanup temp file: {cleanup_error}")
+        # Clean up temporary music file if created
+        if temp_music_file and music_path and os.path.exists(music_path):
+            try:
+                os.unlink(music_path)
+                print(f"[TASK {task_id}] Cleaned up temporary music file: {music_path}")
+            except Exception as cleanup_error:
+                print(f"[TASK {task_id}] Warning: Failed to cleanup temp file: {cleanup_error}")
+        
+        # Export to in-memory buffer instead of file
+        update_progress(97, 'Exporting to MP3...')
+        output_filename = f"UAP_Signal_{data.get('preset_name', 'custom')}.mp3"
+        
+        # Create in-memory buffer
+        mp3_buffer = io.BytesIO()
+        signal.export(mp3_buffer, format="mp3")
+        mp3_buffer.seek(0)  # Reset buffer position to start
+        
+        # Get visualization data
+        update_progress(99, 'Generating visualizations...')
+        waveform_data = get_waveform_data(signal, samples=1000)
+        fft_data = get_fft_data(signal, bins=512)
+        
+        print(f"[TASK {task_id}] Generation complete!")
+        
+        # Update task with result (store buffer instead of filename)
+        generation_progress[task_id]['status'] = 'completed'
+        generation_progress[task_id]['progress'] = 100
+        generation_progress[task_id]['message'] = 'Complete!'
+        generation_progress[task_id]['result'] = {
+            'filename': output_filename,
+            'metadata': metadata,
+            'waveform': waveform_data,
+            'fft': fft_data,
+            'mp3_data': mp3_buffer.getvalue(),  # Store raw bytes
+            'duration_ms': len(signal)
+        }
         
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
         print(f"[TASK {task_id}] ERROR: {error_trace}")
+        
+        # Clean up temporary music file if created
+        if temp_music_file and music_path and os.path.exists(music_path):
+            try:
+                os.unlink(music_path)
+                print(f"[TASK {task_id}] Cleaned up temporary music file after error: {music_path}")
+            except Exception as cleanup_error:
+                print(f"[TASK {task_id}] Warning: Failed to cleanup temp file: {cleanup_error}")
+        
         generation_progress[task_id]['status'] = 'error'
         generation_progress[task_id]['error'] = str(e)
         generation_progress[task_id]['message'] = f'Error: {str(e)}'
