@@ -1,5 +1,12 @@
 # UAP Signal Generator Dashboard
 
+[![Heroku](https://img.shields.io/badge/heroku-deployed-430098?style=for-the-badge&logo=heroku&logoColor=white)](https://ultrasonic-sweep-f346d41ecd97.herokuapp.com/)
+[![Python](https://img.shields.io/badge/python-3.12.8-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/flask-3.1.2-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
+
+🚀 **[Live Demo](https://ultrasonic-sweep-f346d41ecd97.herokuapp.com/)** | 📚 **[Documentation](https://ultrasonic-sweep-f346d41ecd97.herokuapp.com/documentation)**
+
 ## Project Vision & Intent
 
 This application represents a unique collaboration between human intuition and artificial intelligence to create a **hybrid communication signal** designed for potential contact with Unknown Aerial Phenomena (UAP). Unlike conventional signal generation, this project weaves together:
