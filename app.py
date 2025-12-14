@@ -230,7 +230,14 @@ def api_progress(task_id):
                 break
             
             task_data = generation_progress[task_id]
-            yield f"data: {json.dumps(task_data)}\n\n"
+            
+            # Create a copy without mp3_data (bytes not JSON serializable)
+            sse_data = task_data.copy()
+            if 'result' in sse_data and sse_data['result']:
+                sse_data['result'] = sse_data['result'].copy()
+                sse_data['result'].pop('mp3_data', None)  # Remove bytes from SSE
+            
+            yield f"data: {json.dumps(sse_data)}\n\n"
             
             if task_data['status'] in ['completed', 'error']:
                 # Clean up after 30 seconds to allow client to retrieve result
