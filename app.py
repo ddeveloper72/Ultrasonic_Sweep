@@ -36,6 +36,18 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    import shutil
+    ffmpeg_status = shutil.which('ffmpeg') or 'not found'
+    return jsonify({
+        'status': 'ok',
+        'ffmpeg': ffmpeg_status,
+        'python': os.sys.version
+    })
+
+
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -78,7 +90,9 @@ def api_generate():
     """Initiate signal generation and return task ID"""
     try:
         data = request.json
+        print(f"[GENERATE] Received request: {data.get('preset_name', 'unknown')}")
         task_id = str(uuid.uuid4())
+        print(f"[GENERATE] Created task ID: {task_id}")
         
         # Store task info
         generation_progress[task_id] = {
@@ -112,6 +126,7 @@ def api_generate():
 def generate_signal_task(task_id, data):
     """Background task to generate signal with progress updates"""
     try:
+        print(f"[TASK {task_id}] Starting generation task")
         config = data.get('config', {})
         use_music = data.get('use_music', False)
         music_file = data.get('music_file', None)
@@ -121,7 +136,10 @@ def generate_signal_task(task_id, data):
         if use_music and music_file:
             music_path = os.path.join(app.config['UPLOAD_FOLDER'], music_file)
             if not os.path.exists(music_path):
+                print(f"[TASK {task_id}] Music file not found: {music_path}")
                 music_path = None
+            else:
+                print(f"[TASK {task_id}] Using music file: {music_path}")
         
         # Progress callback
         def update_progress(progress, message):
@@ -147,6 +165,8 @@ def generate_signal_task(task_id, data):
         waveform_data = get_waveform_data(signal, samples=1000)
         fft_data = get_fft_data(signal, bins=512)
         
+        print(f"[TASK {task_id}] Generation complete!")
+        
         # Update task with result
         generation_progress[task_id]['status'] = 'completed'
         generation_progress[task_id]['progress'] = 100
@@ -162,9 +182,10 @@ def generate_signal_task(task_id, data):
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
-        print(f"Error in generation task: {error_trace}")
+        print(f"[TASK {task_id}] ERROR: {error_trace}")
         generation_progress[task_id]['status'] = 'error'
         generation_progress[task_id]['error'] = str(e)
+        generation_progress[task_id]['message'] = f'Error: {str(e)}'
 
 
 @app.route('/api/progress/<task_id>')
