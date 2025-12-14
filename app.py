@@ -262,8 +262,8 @@ def api_progress(task_id):
             yield f"data: {json.dumps(sse_data)}\n\n"
             
             if task_data['status'] in ['completed', 'error']:
-                # Clean up after 30 seconds to allow client to retrieve result
-                threading.Timer(30.0, lambda: generation_progress.pop(task_id, None)).start()
+                # Clean up after 5 minutes to allow client to retrieve result
+                threading.Timer(300.0, lambda: generation_progress.pop(task_id, None)).start()
                 break
             
             time.sleep(0.5)  # Update every 500ms
