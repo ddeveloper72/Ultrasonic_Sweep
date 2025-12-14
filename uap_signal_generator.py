@@ -13,20 +13,26 @@ import pydub
 import os
 import shutil
 
-# Configure FFmpeg - check for system ffmpeg first, then Windows path
+# Configure FFmpeg - check multiple locations
 ffmpeg_path = shutil.which('ffmpeg')
 if not ffmpeg_path:
-    # Try Windows path if on Windows
-    windows_path = "C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe"
-    if os.path.exists(windows_path):
-        ffmpeg_path = windows_path
-    else:
-        # Default to system ffmpeg (Heroku installs it in /usr/bin)
-        ffmpeg_path = '/usr/bin/ffmpeg'
+    # Try common paths
+    possible_paths = [
+        "C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe",  # Windows
+        '/usr/bin/ffmpeg',  # Standard Linux
+        '/app/.apt/usr/bin/ffmpeg',  # Heroku with apt buildpack
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            ffmpeg_path = path
+            break
 
-AudioSegment.converter = ffmpeg_path
-AudioSegment.ffmpeg = ffmpeg_path
-AudioSegment.ffprobe = ffmpeg_path.replace('ffmpeg', 'ffprobe')
+if ffmpeg_path:
+    AudioSegment.converter = ffmpeg_path
+    AudioSegment.ffmpeg = ffmpeg_path
+    AudioSegment.ffprobe = ffmpeg_path.replace('ffmpeg', 'ffprobe')
+else:
+    print("WARNING: FFmpeg not found!")
 
 
 def apply_amplitude_modulation(carrier, modulator):
