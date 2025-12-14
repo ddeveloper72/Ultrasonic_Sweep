@@ -49,13 +49,16 @@ function initializeEventListeners() {
     document.getElementById('useMusicSwitch').addEventListener('change', handleMusicSwitchChange);
 
     // Upload music button
-    document.getElementById('uploadMusicBtn').addEventListener('click', handleMusicUpload);
+    const uploadMusicBtn = document.getElementById('uploadMusicBtn');
+    if (uploadMusicBtn) {
+        uploadMusicBtn.addEventListener('click', handleMusicUpload);
+    }
 
     // Download YouTube button
-    document.getElementById('downloadYoutubeBtn').addEventListener('click', handleYoutubeDownload);
-
-    // Upload cookies button
-    document.getElementById('uploadCookiesBtn').addEventListener('click', handleCookiesUpload);
+    const downloadYoutubeBtn = document.getElementById('downloadYoutubeBtn');
+    if (downloadYoutubeBtn) {
+        downloadYoutubeBtn.addEventListener('click', handleYoutubeDownload);
+    }
 
     // Tremolo depth slider
     document.getElementById('tremoloDepth').addEventListener('input', function (e) {
