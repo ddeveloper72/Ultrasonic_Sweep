@@ -156,11 +156,14 @@ def generate_signal_task(task_id, data):
             progress_callback=update_progress
         )
         
-        # Save to file
+        # Export to in-memory buffer instead of file
         update_progress(97, 'Exporting to MP3...')
         output_filename = f"UAP_Signal_{data.get('preset_name', 'custom')}.mp3"
-        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-        signal.export(output_path, format="mp3")
+        
+        # Create in-memory buffer
+        mp3_buffer = io.BytesIO()
+        signal.export(mp3_buffer, format="mp3")
+        mp3_buffer.seek(0)  # Reset buffer position to start
         
         # Get visualization data
         update_progress(99, 'Generating visualizations...')
@@ -169,7 +172,7 @@ def generate_signal_task(task_id, data):
         
         print(f"[TASK {task_id}] Generation complete!")
         
-        # Update task with result
+        # Update task with result (store buffer instead of filename)
         generation_progress[task_id]['status'] = 'completed'
         generation_progress[task_id]['progress'] = 100
         generation_progress[task_id]['message'] = 'Complete!'
@@ -178,6 +181,7 @@ def generate_signal_task(task_id, data):
             'metadata': metadata,
             'waveform': waveform_data,
             'fft': fft_data,
+            'mp3_data': mp3_buffer.getvalue()  # Store raw bytes
             'duration_ms': len(signal)
         }
         
@@ -243,13 +247,32 @@ def api_progress(task_id):
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
 
-@app.route('/api/download/<filename>')
-def api_download(filename):
-    """Download generated signal file"""
-    file_path = os.path.join(app.config['OUTPUT_FOLDER'], secure_filename(filename))
-    if os.path.exists(file_path):
-        return send_file(file_path, as_attachment=True)
-    return jsonify({'status': 'error', 'message': 'File not found'}), 404
+@app.route('/api/download/<task_id>')
+def api_download(task_id):
+    """Download generated signal file from memory"""
+    # Check if task exists and has completed
+    if task_id not in generation_progress:
+        return jsonify({'status': 'error', 'message': 'Task not found'}), 404
+    
+    task = generation_progress[task_id]
+    if task['status'] != 'completed':
+        return jsonify({'status': 'error', 'message': 'Generation not complete'}), 400
+    
+    if not task.get('result') or 'mp3_data' not in task['result']:
+        return jsonify({'status': 'error', 'message': 'File data not available'}), 404
+    
+    # Create BytesIO from stored data
+    mp3_buffer = io.BytesIO(task['result']['mp3_data'])
+    mp3_buffer.seek(0)
+    
+    filename = task['result'].get('filename', 'UAP_Signal.mp3')
+    
+    return send_file(
+        mp3_buffer,
+        mimetype='audio/mpeg',
+        as_attachment=True,
+        download_name=filename
+    )
 
 
 @app.route('/api/upload_music', methods=['POST'])

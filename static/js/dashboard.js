@@ -1,5 +1,6 @@
 // UAP Signal Generator Dashboard JavaScript
 
+let currentTaskId = null;
 let currentFilename = null;
 let currentWaveform = null;
 let loadingModal = null;
@@ -350,6 +351,7 @@ function listenToProgress(taskId) {
             hideProgressModal();
 
             // Display the results
+            currentTaskId = taskId;  // Store task ID for downloads
             currentFilename = data.result.filename;
             currentWaveform = data.result.waveform;
             displaySignalInfo(data.result);
@@ -630,8 +632,8 @@ function drawSpectrogram(waveformData, durationMs) {
 function handlePlay() {
     if (audioPlayer) {
         // Only set src if it's not already loaded
-        if (!audioPlayer.src || !audioPlayer.src.includes(currentFilename)) {
-            audioPlayer.src = `/api/download/${currentFilename}`;
+        if (!audioPlayer.src || !audioPlayer.src.includes(currentTaskId)) {
+            audioPlayer.src = `/api/download/${currentTaskId}`;
         }
         audioPlayer.play();
     }
@@ -672,8 +674,10 @@ function showDownloadButton(filename) {
 }
 
 function handleDownload() {
-    if (currentFilename) {
-        window.location.href = `/api/download/${currentFilename}`;
+    if (currentTaskId) {
+        window.location.href = `/api/download/${currentTaskId}`;
+    } else {
+        alert('No signal generated yet. Please generate a signal first.');
     }
 }
 
