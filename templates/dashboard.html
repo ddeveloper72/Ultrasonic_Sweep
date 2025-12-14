@@ -77,32 +77,16 @@
                                 <label for="youtubeUrl" class="form-label">YouTube URL:</label>
                                 <input type="text" class="form-control" id="youtubeUrl"
                                     placeholder="https://www.youtube.com/watch?v=...">
-                                <div class="text-muted small mt-1">
-                                    Paste a YouTube video URL to extract audio
+                                <div class="text-warning small mt-1" id="youtubeWarning">
+                                    <i class="bi bi-exclamation-triangle"></i> 
+                                    <strong>Note:</strong> YouTube downloads work reliably on local installations only. 
+                                    On hosted versions, please use the file upload option instead.
                                 </div>
                             </div>
 
                             <button class="btn btn-sm btn-outline-primary" id="downloadYoutubeBtn">
                                 <i class="bi bi-download"></i> Download from YouTube
                             </button>
-
-                            <div class="mt-3 p-2 bg-light border rounded">
-                                <small class="text-muted d-block mb-1">
-                                    <i class="bi bi-shield-lock"></i> Having bot detection issues?
-                                </small>
-                                <input type="file" class="form-control form-control-sm" id="cookiesUpload"
-                                    accept=".txt">
-                                <button class="btn btn-sm btn-outline-info mt-1" id="uploadCookiesBtn">
-                                    <i class="bi bi-upload"></i> Upload YouTube Cookies
-                                </button>
-                                <div class="text-success small mt-1" id="cookiesStatus" style="display: none;">
-                                    <i class="bi bi-check-circle"></i> Cookies active
-                                </div>
-                                <div class="text-muted small mt-1">
-                                    <a href="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
-                                        target="_blank">How to export cookies</a>
-                                </div>
-                            </div>
 
                             <div class="mt-2">
                                 <small class="text-muted">Or upload a local file:</small>

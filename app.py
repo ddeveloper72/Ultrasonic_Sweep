@@ -378,21 +378,13 @@ def api_download_youtube():
             'outtmpl': os.path.join(app.config['UPLOAD_FOLDER'], f'youtube_{video_id}.%(ext)s'),
             'quiet': False,  # Enable output for debugging
             'no_warnings': False,
-            # Enhanced bypass options
+            # Use web client when we have cookies
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android_creator', 'ios'],  # Use creator API
-                    'skip': ['hls', 'dash', 'translated_subs'],
-                    'player_skip': ['webpage', 'configs'],
+                    'player_client': ['web'],
+                    'skip': ['hls', 'dash'],
                 }
             },
-            # Additional headers to mimic real browser/app
-            'http_headers': {
-                'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-us,en;q=0.5',
-                'Sec-Fetch-Mode': 'navigate',
-            }
         }
         
         # Check for uploaded cookie file first (works on both local and Heroku)
@@ -401,10 +393,9 @@ def api_download_youtube():
         # Check for cookies from Heroku environment variable
         heroku_cookies = os.environ.get('YOUTUBE_COOKIES')
         if heroku_cookies and is_heroku:
-            # Write environment variable cookies to temp file
-            with open(cookies_path, 'w', encoding='utf-8') as f:
-                # Decode base64 if needed, or write directly
-                f.write(heroku_cookies.replace('\\n', '\n'))
+            # Write environment variable cookies to temp file with proper format
+            with open(cookies_path, 'w', encoding='utf-8', newline='\n') as f:
+                f.write(heroku_cookies)
             ydl_opts['cookiefile'] = cookies_path
             print(f"Using cookies from YOUTUBE_COOKIES environment variable")
         elif os.path.exists(cookies_path):

@@ -556,6 +556,8 @@ ydl_opts = {
 
 Downloaded files are cached as `youtube_{video_id}.mp3` for instant reuse.
 
+**⚠️ Important Note:** YouTube downloads work reliably on **local installations only**. The feature uses browser cookies for authentication, which work perfectly when running locally but may be blocked by YouTube's bot detection on hosted/cloud deployments. For the hosted version, please use the file upload option instead.
+
 ### Hybrid Approach Benefits
 - **Multiple modulation types** for broader spectral coverage
 - **Combines natural and artificial** signals showing technological capability
