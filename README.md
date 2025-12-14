@@ -36,17 +36,17 @@ This collaborative approach demonstrates responsible AI development where human 
 ## Screenshots
 
 ### Visualizations
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/01-spectrogram-visualization.png" alt="Signal Visualization Spectrogram" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/01-waveform-visualization.png" alt="Waveform Visualization" width="800">
 
-*Signal visualization showing frequency spectrum over time (spectrogram view)*
+*Real-time waveform display showing signal amplitude over time (time-domain view)*
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/02-waveform-visualization.png" alt="Signal Visualization Waveform" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/02-FFT-spectrum-visualization.png" alt="FFT Spectrum Visualization" width="800">
 
-*Real-time waveform display showing signal amplitude over time*
+*FFT frequency spectrum analysis displaying frequency components from 100Hz to 15kHz*
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-alt.png" alt="Signal Visualization Spectrogram" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-visualization.png" alt="Spectrogram Visualization" width="800">
 
-*Frequency spectrum analysis showing signal components across time*
+*Spectrogram showing frequency spectrum over time (scrolling time-frequency heatmap)*
 
 ### Music Integration
 <img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/04-music-modulation-toggle.png" alt="Music Modulation Controls" width="800">
@@ -303,7 +303,7 @@ graph TD
 
 ### Quick Start with YouTube
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-alt.png" alt="Signal Visualization Spectrogram" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-visualization.png" alt="Spectrogram Visualization" width="800">
 
 1. Paste a YouTube URL into the "YouTube URL" field
 2. Click "Download from YouTube" - audio extracts automatically
@@ -488,13 +488,17 @@ This demonstrates that the signal is not purely algorithmic - it carries genuine
 
 The dashboard provides three interactive visualization modes:
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-music-integration.png" alt="Music Integration Options" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/01-waveform-visualization.png" alt="Waveform Visualization" width="800">
 
-*Complete music integration controls with modulation toggles and YouTube/file upload options*
+*Real-time waveform display showing signal amplitude over time (time-domain view)*
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-playback-controls.png" alt="Playback Controls" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/02-FFT-spectrum-visualization.png" alt="FFT Spectrum Visualization" width="800">
 
-*Music playback and download controls with Play, Pause, Stop, and Download buttons*
+*FFT frequency spectrum analysis displaying frequency components from 100Hz to 15kHz*
+
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-visualization.png" alt="Spectrogram Visualization" width="800">
+
+*Spectrogram showing frequency spectrum over time (scrolling time-frequency heatmap)*
 
 Each visualization updates in real-time during playback (~60fps) using the Web Audio API:
 - **Waveform**: Time-domain oscilloscope view
