@@ -358,7 +358,7 @@ function listenToProgress(taskId) {
             drawWaveform(data.result.waveform);
             drawSpectrum(data.result.fft);
             drawSpectrogram(data.result.waveform, data.result.duration_ms);
-            showDownloadButton(data.result.filename);
+            showDownloadButton(taskId, data.result.filename);  // Pass task_id
 
         } else if (data.status === 'error') {
             eventSource.close();
@@ -659,14 +659,14 @@ function handleStop() {
     }
 }
 
-function showDownloadButton(filename) {
+function showDownloadButton(taskId, filename) {
     document.getElementById('noSignal').classList.add('d-none');
     document.getElementById('downloadSection').classList.remove('d-none');
     document.getElementById('downloadFilename').textContent = `File: ${filename}`;
 
-    // Enable playback controls and load audio
+    // Enable playback controls and load audio using task_id
     if (audioPlayer) {
-        audioPlayer.src = `/api/download/${filename}`;
+        audioPlayer.src = `/api/download/${taskId}`;
         document.getElementById('playBtn').disabled = false;
         document.getElementById('pauseBtn').disabled = true;
         document.getElementById('stopBtn').disabled = true;
