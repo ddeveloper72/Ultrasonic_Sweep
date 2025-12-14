@@ -171,6 +171,11 @@ def generate_signal_task(task_id, data):
 def api_progress(task_id):
     """Stream progress updates via Server-Sent Events"""
     def generate():
+        # Check if task exists
+        if task_id not in generation_progress:
+            yield f"data: {json.dumps({'status': 'error', 'error': 'Task not found', 'progress': 0, 'message': 'Task not found'})}\n\n"
+            return
+        
         # Send keep-alive and check status
         import time
         max_wait = 120  # 2 minutes max
@@ -179,7 +184,7 @@ def api_progress(task_id):
         while task_id in generation_progress:
             # Check timeout
             if time.time() - start_time > max_wait:
-                yield f"data: {json.dumps({'status': 'error', 'error': 'Generation timeout'})}\n\n"
+                yield f"data: {json.dumps({'status': 'error', 'error': 'Generation timeout', 'progress': 0, 'message': 'Timeout'})}\n\n"
                 break
             
             task_data = generation_progress[task_id]
@@ -192,9 +197,17 @@ def api_progress(task_id):
             
             time.sleep(0.5)  # Update every 500ms
     
-    return Response(stream_with_context(generate()), 
-                   mimetype='text/event-stream',
-                   headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
+    try:
+        return Response(stream_with_context(generate()), 
+                       mimetype='text/event-stream',
+                       headers={
+                           'Cache-Control': 'no-cache',
+                           'X-Accel-Buffering': 'no',
+                           'Connection': 'keep-alive'
+                       })
+    except Exception as e:
+        print(f"SSE error: {str(e)}")
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 
 @app.route('/api/download/<filename>')

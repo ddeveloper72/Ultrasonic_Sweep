@@ -275,8 +275,10 @@ function handleGenerateSignal() {
         })
         .then(data => {
             if (data.status === 'started') {
-                // Start listening to progress updates
-                listenToProgress(data.task_id);
+                // Start listening to progress updates with slight delay
+                setTimeout(() => {
+                    listenToProgress(data.task_id);
+                }, 100);
             } else if (data.status === 'error') {
                 hideProgressModal();
                 alert('Error starting generation: ' + data.message);
