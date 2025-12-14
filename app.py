@@ -326,18 +326,31 @@ def api_download_youtube():
                 'preferredquality': '192',
             }],
             'outtmpl': os.path.join(app.config['UPLOAD_FOLDER'], f'youtube_{video_id}.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
-            # Use po_token method for Heroku, browser cookies for local
+            'quiet': False,  # Enable output for debugging
+            'no_warnings': False,
+            # Enhanced bypass options
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'ios', 'web'],
-                    'skip': ['hls', 'dash']
+                    'player_client': ['android_creator', 'ios'],  # Use creator API
+                    'skip': ['hls', 'dash', 'translated_subs'],
+                    'player_skip': ['webpage', 'configs'],
                 }
+            },
+            # Additional headers to mimic real browser/app
+            'http_headers': {
+                'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-us,en;q=0.5',
+                'Sec-Fetch-Mode': 'navigate',
             }
         }
         
         # Add browser cookies only if not on Heroku
+        if not is_heroku:
+            try:
+                ydl_opts['cookiesfrombrowser'] = ('chrome',)
+            except:
+                pass  # Fallback if Chrome cookies unavailable
         if not is_heroku:
             try:
                 ydl_opts['cookiesfrombrowser'] = ('chrome',)
