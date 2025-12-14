@@ -12,12 +12,33 @@ let analyserNode = null;
 let sourceNode = null;
 let animationId = null;
 
-document.addEventListener('DOMContentLoaded', function () {
-    loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-    audioPlayer = document.getElementById('audioPlayer');
+// Global error handler for diagnostics
+window.addEventListener('error', function(event) {
+    showError('Global Error: ' + event.message + '\nFile: ' + event.filename + '\nLine: ' + event.lineno);
+});
 
-    initializeEventListeners();
-    loadMusicFiles();
+function showError(message) {
+    const overlay = document.getElementById('errorOverlay');
+    const messageEl = document.getElementById('errorMessage');
+    if (overlay && messageEl) {
+        messageEl.textContent = message;
+        overlay.style.display = 'block';
+    }
+    console.error('DIAGNOSTIC:', message);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    try {
+        console.log('DOMContentLoaded fired');
+        loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        audioPlayer = document.getElementById('audioPlayer');
+
+        initializeEventListeners();
+        loadMusicFiles();
+        console.log('Initialization complete');
+    } catch (error) {
+        showError('Initialization Error: ' + error.message + '\nStack: ' + error.stack);
+    }
 });
 
 function initializeEventListeners() {
@@ -47,7 +68,24 @@ function initializeEventListeners() {
     });
 
     // Generate button
-    document.getElementById('generateBtn').addEventListener('click', handleGenerateSignal);
+    try {
+        const generateBtn = document.getElementById('generateBtn');
+        console.log('Generate button element:', generateBtn);
+        if (!generateBtn) {
+            throw new Error('Generate button not found in DOM');
+        }
+        generateBtn.addEventListener('click', function(e) {
+            console.log('Generate button clicked!');
+            try {
+                handleGenerateSignal(e);
+            } catch (error) {
+                showError('Generate Handler Error: ' + error.message + '\nStack: ' + error.stack);
+            }
+        });
+        console.log('Generate button event listener attached');
+    } catch (error) {
+        showError('Generate Button Setup Error: ' + error.message);
+    }
 
     // Playback controls
     document.getElementById('playBtn').addEventListener('click', handlePlay);

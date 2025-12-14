@@ -26,6 +26,13 @@
         </div>
     </nav>
 
+    <!-- Diagnostic Error Overlay (temporary for debugging) -->
+    <div id="errorOverlay" style="display:none; position:fixed; top:60px; left:50%; transform:translateX(-50%); z-index:9999; max-width:90%; background:rgba(220,53,69,0.95); color:white; padding:15px; border-radius:5px; box-shadow:0 4px 6px rgba(0,0,0,0.3);">
+        <strong>JavaScript Error:</strong>
+        <pre id="errorMessage" style="margin:10px 0 0 0; white-space:pre-wrap; font-size:12px;"></pre>
+        <button onclick="document.getElementById('errorOverlay').style.display='none'" class="btn btn-sm btn-light mt-2">Dismiss</button>
+    </div>
+
     <div class="container-fluid mt-4">
         <div class="row">
             <!-- Left Panel: Presets and Configuration -->
