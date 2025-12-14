@@ -243,12 +243,11 @@ def generate_signal_task(task_id, data):
 @app.route('/api/progress/<task_id>')
 def api_progress(task_id):
     """Stream progress updates via Server-Sent Events"""
+    # Validate task_id format (UUID)
     try:
-        # Validate task_id format (UUID)
-        try:
-            uuid.UUID(task_id)
-        except ValueError:
-            return jsonify({'status': 'error', 'error': 'Invalid task ID format'}), 400
+        uuid.UUID(task_id)
+    except ValueError:
+        return jsonify({'status': 'error', 'error': 'Invalid task ID format'}), 400
     
     def generate():
         import time
