@@ -12,6 +12,7 @@ frequency_sweep/
 *.png
 *.csv
 *.pdf
+.env
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
