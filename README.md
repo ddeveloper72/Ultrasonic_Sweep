@@ -172,8 +172,8 @@ graph LR
     end
     
     subgraph "Layer 3: Attention Signals"
-        C1[Chirps 2500Hz<br/>Every 2s] --> TRE[Tremolo]
-        C2[Ultrasonic 17kHz<br/>Every 3.5s] --> TRE
+        C1["Chirps 2500Hz\nEvery 2s"] --> TRE[Tremolo]
+        C2["Ultrasonic 17kHz\nEvery 3.5s"] --> TRE
         TRE --> MIX
     end
     
@@ -207,7 +207,7 @@ graph TD
     A[Audio Element] --> B[AudioContext]
     B --> C[MediaElementSource]
     C --> D[AnalyserNode FFT=2048]
-    D --> E[Animation Loop<br/>requestAnimationFrame]
+    D --> E["Animation Loop\nrequestAnimationFrame"]
     
     E --> F{Active Tab?}
     
@@ -216,7 +216,7 @@ graph TD
     
     F -->|Spectrum| I[getByteFrequencyData]
     I --> J[Draw HSL Gradient Bars]
-    J --> K[Frequency Labels<br/>100Hz-15kHz]
+    J --> K["Frequency Labels\n100Hz-15kHz"]
     
     F -->|Spectrogram| L[getByteFrequencyData]
     L --> M[100-Slice Ring Buffer]
@@ -320,8 +320,8 @@ flowchart TD
     Choice -->|No Music| Preset[Select Preset Only]
     
     YT --> Download[Click Download from YouTube]
-    Download --> Wait1[Wait for Download<br/>Shows title + duration]
-    Wait1 --> AutoSelect[File Auto-Selected<br/>Music Switch Enabled]
+    Download --> Wait1["Wait for Download\nShows title + duration"]
+    Wait1 --> AutoSelect["File Auto-Selected\nMusic Switch Enabled"]
     
     Upload --> Browse[Browse Local File]
     Browse --> UploadBtn[Click Upload Music]
@@ -331,7 +331,7 @@ flowchart TD
     ManualSelect --> Config
     Preset --> Config
     
-    Config[Configure Frequencies<br/>& Modulation Settings] --> Generate[Click Generate Signal]
+    Config["Configure Frequencies\n& Modulation Settings"] --> Generate[Click Generate Signal]
     
     Generate --> Progress[Real-Time Progress Display]
     Progress --> P1[5%: Loading music...]
@@ -348,19 +348,19 @@ flowchart TD
     Complete --> Viz[View Visualizations]
     Viz --> Tab{Select Tab}
     
-    Tab -->|Waveform| Wave[Green Oscilloscope<br/>Time Domain Display]
-    Tab -->|FFT Spectrum| FFT[Frequency Bars<br/>100Hz - 15kHz Labels]
-    Tab -->|Spectrogram| Spec[Time/Frequency Heatmap<br/>Scrolling Display]
+    Tab -->|Waveform| Wave["Green Oscilloscope\nTime Domain Display"]
+    Tab -->|FFT Spectrum| FFT["Frequency Bars\n100Hz - 15kHz Labels"]
+    Tab -->|Spectrogram| Spec["Time/Frequency Heatmap\nScrolling Display"]
     
     Wave --> Play[Click Play Button]
     FFT --> Play
     Spec --> Play
     
-    Play --> RealTime[Real-Time Visualization<br/>Updates ~60fps]
+    Play --> RealTime["Real-Time Visualization\nUpdates ~60fps"]
     RealTime --> Controls{Playback Controls}
     
-    Controls -->|Pause| Paused[Audio Paused<br/>Visualization Stops]
-    Controls -->|Stop| Stopped[Reset to Beginning<br/>Clear Spectrogram]
+    Controls -->|Pause| Paused["Audio Paused\nVisualization Stops"]
+    Controls -->|Stop| Stopped["Reset to Beginning\nClear Spectrogram"]
     Controls -->|Resume| RealTime
     
     Paused --> Controls
@@ -419,8 +419,8 @@ graph TB
     end
     
     subgraph "Layer 3: Attention - Pulsing/Organic"
-        L3A[Chirps 2500Hz<br/>Every 2000ms] --> L3Trem{Tremolo?}
-        L3B[Ultrasonic 17kHz<br/>Every 3500ms] --> L3Seq[Continuous Sequence]
+        L3A["Chirps 2500Hz\nEvery 2000ms"] --> L3Trem{Tremolo?}
+        L3B["Ultrasonic 17kHz\nEvery 3500ms"] --> L3Seq[Continuous Sequence]
         L3Trem -->|Yes| L3Out[Organic Pulses]
         L3Trem -->|No| L3Out
         L3Seq --> L3Out
