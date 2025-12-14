@@ -35,7 +35,7 @@ This collaborative approach demonstrates responsible AI development where human 
 
 ## Screenshots
 
-### Dashboard & Configuration
+### Visualizations
 <img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/01-spectrogram-visualization.png" alt="Signal Visualization Spectrogram" width="800">
 
 *Signal visualization showing frequency spectrum over time (spectrogram view)*
@@ -44,16 +44,20 @@ This collaborative approach demonstrates responsible AI development where human 
 
 *Real-time waveform display showing signal amplitude over time*
 
-### Music Integration
 <img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-alt.png" alt="Signal Visualization Spectrogram" width="800">
 
 *Frequency spectrum analysis showing signal components across time*
 
+### Music Integration
 <img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/04-music-modulation-toggle.png" alt="Music Modulation Controls" width="800">
 
 *Music integration section with Use Music Modulation toggle*
 
-### Signal Generation
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-music-integration.png" alt="Music Integration Options" width="800">
+
+*Complete music integration controls with modulation toggles and YouTube/file upload options*
+
+### Dashboard & Configuration
 <img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/05-frequency-configuration.png" alt="Frequency Configuration" width="800">
 
 *Frequency configuration card section with tone frequency controls*
@@ -62,12 +66,8 @@ This collaborative approach demonstrates responsible AI development where human 
 
 *Modulation settings card with Tremolo toggle and depth controls*
 
-### Visualizations
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-music-integration.png" alt="Music Integration Options" width="800">
-
-*Complete music integration controls with modulation toggles and YouTube/file upload options*
-
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-frequency-spectrum.png" alt="Playback Controls" width="800">
+### Playback Controls
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-playback-controls.png" alt="Playback Controls" width="800">
 
 *Music playback and download controls with Play, Pause, Stop, and Download buttons*
 
