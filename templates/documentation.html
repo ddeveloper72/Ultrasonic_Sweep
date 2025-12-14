@@ -109,6 +109,23 @@
             border-radius: 5px;
         }
 
+        /* Badge images - make them wrap nicely on mobile */
+        .documentation-content p img[src*="shields.io"],
+        .documentation-content p img[src*="badge"] {
+            display: inline-block;
+            margin: 0.25rem 0.25rem;
+            max-width: 100%;
+        }
+
+        /* Paragraph containing badges - allow wrapping */
+        .documentation-content p:has(img[src*="shields.io"]),
+        .documentation-content p:has(img[src*="badge"]) {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
         .documentation-content table {
             width: 100%;
             margin: 1rem 0;
