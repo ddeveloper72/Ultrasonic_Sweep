@@ -36,40 +36,40 @@ This collaborative approach demonstrates responsible AI development where human 
 ## Screenshots
 
 ### Dashboard & Configuration
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/01-dashboard-presets.png" alt="Dashboard with Presets" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/01-spectrogram-visualization.png" alt="Signal Visualization Spectrogram" width="800">
 
-*Main dashboard showing preset selection and configuration options*
+*Signal visualization showing frequency spectrum over time (spectrogram view)*
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/02-frequency-configuration.png" alt="Frequency Configuration" width="800">
-
-*Advanced frequency controls for custom signal generation*
-
-### Music Integration
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-music-upload.png" alt="Music Upload" width="800">
-
-*Music file upload interface for signal modulation*
-
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/04-music-upload-success.png" alt="Upload Success" width="800">
-
-*Confirmation of successful music file upload with duration info*
-
-### Signal Generation
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/05-signal-generation-progress.png" alt="Generation Progress" width="800">
-
-*Real-time progress tracking during signal generation*
-
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/06-generation-complete.png" alt="Generation Complete" width="800">
-
-*Completed signal generation with playback controls*
-
-### Visualizations
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-waveform-visualization.png" alt="Waveform Visualization" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/02-waveform-visualization.png" alt="Signal Visualization Waveform" width="800">
 
 *Real-time waveform display showing signal amplitude over time*
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-frequency-spectrum.png" alt="Frequency Spectrum" width="800">
+### Music Integration
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-alt.png" alt="Signal Visualization Spectrogram" width="800">
 
-*FFT frequency spectrum analysis with labeled frequency bands*
+*Frequency spectrum analysis showing signal components across time*
+
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/04-music-modulation-toggle.png" alt="Music Modulation Controls" width="800">
+
+*Music integration section with Use Music Modulation toggle*
+
+### Signal Generation
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/05-frequency-configuration.png" alt="Frequency Configuration" width="800">
+
+*Frequency configuration card section with tone frequency controls*
+
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/06-modulation-settings.png" alt="Modulation Settings" width="800">
+
+*Modulation settings card with Tremolo toggle and depth controls*
+
+### Visualizations
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-music-integration.png" alt="Music Integration Options" width="800">
+
+*Complete music integration controls with modulation toggles and YouTube/file upload options*
+
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-frequency-spectrum.png" alt="Playback Controls" width="800">
+
+*Music playback and download controls with Play, Pause, Stop, and Download buttons*
 
 ## Architecture Overview
 
@@ -303,7 +303,7 @@ graph TD
 
 ### Quick Start with YouTube
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-music-upload.png" alt="Music Upload Interface" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-alt.png" alt="Signal Visualization Spectrogram" width="800">
 
 1. Paste a YouTube URL into the "YouTube URL" field
 2. Click "Download from YouTube" - audio extracts automatically
@@ -314,9 +314,9 @@ graph TD
 7. Use playback controls to preview the signal
 8. Click "Download Signal" to save as MP3
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/05-signal-generation-progress.png" alt="Generation Progress" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/05-frequency-configuration.png" alt="Frequency Configuration" width="800">
 
-*Real-time progress updates during signal generation*
+*Frequency configuration card section with tone frequency controls*
 
 ### Advanced Workflow
 
@@ -488,13 +488,13 @@ This demonstrates that the signal is not purely algorithmic - it carries genuine
 
 The dashboard provides three interactive visualization modes:
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-waveform-visualization.png" alt="Waveform Visualization" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-music-integration.png" alt="Music Integration Options" width="800">
 
-*Real-time waveform showing signal amplitude over time*
+*Complete music integration controls with modulation toggles and YouTube/file upload options*
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-frequency-spectrum.png" alt="Frequency Spectrum" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-playback-controls.png" alt="Playback Controls" width="800">
 
-*FFT spectrum analysis displaying frequency components from 100Hz to 15kHz*
+*Music playback and download controls with Play, Pause, Stop, and Download buttons*
 
 Each visualization updates in real-time during playback (~60fps) using the Web Audio API:
 - **Waveform**: Time-domain oscilloscope view
