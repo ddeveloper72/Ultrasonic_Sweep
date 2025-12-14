@@ -33,6 +33,36 @@ This project was developed as a **human-AI collaborative system** in accordance 
 
 This collaborative approach demonstrates responsible AI development where human creativity and judgment remain central while leveraging AI capabilities for technical execution.
 
+## Screenshots
+
+### Dashboard & Configuration
+![Dashboard with Presets](static/images/01-dashboard-presets.png)
+*Main dashboard showing preset selection and configuration options*
+
+![Frequency Configuration](static/images/02-frequency-configuration.png)
+*Advanced frequency controls for custom signal generation*
+
+### Music Integration
+![Music Upload](static/images/03-music-upload.png)
+*Music file upload interface for signal modulation*
+
+![Upload Success](static/images/04-music-upload-success.png)
+*Confirmation of successful music file upload with duration info*
+
+### Signal Generation
+![Generation Progress](static/images/05-signal-generation-progress.png)
+*Real-time progress tracking during signal generation*
+
+![Generation Complete](static/images/06-generation-complete.png)
+*Completed signal generation with playback controls*
+
+### Visualizations
+![Waveform Visualization](static/images/07-waveform-visualization.png)
+*Real-time waveform display showing signal amplitude over time*
+
+![Frequency Spectrum](static/images/08-frequency-spectrum.png)
+*FFT frequency spectrum analysis with labeled frequency bands*
+
 ## Architecture Overview
 
 ```mermaid
@@ -264,6 +294,9 @@ graph TD
 ## Usage Guide
 
 ### Quick Start with YouTube
+
+![Music Upload Interface](static/images/03-music-upload.png)
+
 1. Paste a YouTube URL into the "YouTube URL" field
 2. Click "Download from YouTube" - audio extracts automatically
 3. The downloaded audio auto-selects and enables "Use Music Modulation"
@@ -272,6 +305,9 @@ graph TD
 6. Visualizations update automatically when complete
 7. Use playback controls to preview the signal
 8. Click "Download Signal" to save as MP3
+
+![Generation Progress](static/images/05-signal-generation-progress.png)
+*Real-time progress updates during signal generation*
 
 ### Advanced Workflow
 
@@ -438,6 +474,21 @@ When music modulation is enabled, the amplitude (volume) of the music file is us
 4. **Temporal variation**: Creates non-repetitive, organic time-evolution
 
 This demonstrates that the signal is not purely algorithmic - it carries genuine human creative expression woven into fundamental frequencies.
+
+### Real-Time Visualizations
+
+The dashboard provides three interactive visualization modes:
+
+![Waveform Visualization](static/images/07-waveform-visualization.png)
+*Real-time waveform showing signal amplitude over time*
+
+![Frequency Spectrum](static/images/08-frequency-spectrum.png)
+*FFT spectrum analysis displaying frequency components from 100Hz to 15kHz*
+
+Each visualization updates in real-time during playback (~60fps) using the Web Audio API:
+- **Waveform**: Time-domain oscilloscope view
+- **FFT Spectrum**: Frequency bars with labeled bands
+- **Spectrogram**: Scrolling time/frequency heatmap
 
 ## Features
 
