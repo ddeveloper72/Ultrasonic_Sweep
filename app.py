@@ -192,13 +192,23 @@ def generate_signal_task(task_id, data):
 def api_progress(task_id):
     """Stream progress updates via Server-Sent Events"""
     def generate():
-        # Check if task exists
+        import time
+        
+        # Wait for task to be registered (max 2 seconds)
+        wait_time = 0
+        while task_id not in generation_progress and wait_time < 2:
+            time.sleep(0.1)
+            wait_time += 0.1
+        
+        # Check if task exists after waiting
         if task_id not in generation_progress:
+            print(f"[SSE] Task {task_id} not found after waiting")
             yield f"data: {json.dumps({'status': 'error', 'error': 'Task not found', 'progress': 0, 'message': 'Task not found'})}\n\n"
             return
         
+        print(f"[SSE] Connected to task {task_id}")
+        
         # Send keep-alive and check status
-        import time
         max_wait = 120  # 2 minutes max
         start_time = time.time()
         
