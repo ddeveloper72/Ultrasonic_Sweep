@@ -22,12 +22,14 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 app.config['UPLOAD_FOLDER'] = 'source_files'
 app.config['OUTPUT_FOLDER'] = 'generated_signals'
+app.config['COOKIES_FILE'] = 'youtube_cookies.txt'
 
 # Store progress data for each generation task
 generation_progress = {}
 
 # Ensure output directory exists
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'flac', 'm4a'}
 
@@ -280,6 +282,54 @@ def api_upload_music():
     return jsonify({'status': 'error', 'message': 'Invalid file type'}), 400
 
 
+@app.route('/api/upload_cookies', methods=['POST'])
+def api_upload_cookies():
+    """Upload YouTube cookies file for bypassing bot detection"""
+    try:
+        if 'cookies' not in request.files:
+            return jsonify({'status': 'error', 'message': 'No cookies file provided'}), 400
+        
+        file = request.files['cookies']
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'No file selected'}), 400
+        
+        # Save the cookies file
+        cookies_path = app.config['COOKIES_FILE']
+        file.save(cookies_path)
+        
+        # Validate it's a proper cookies file (should contain youtube.com)
+        try:
+            with open(cookies_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                if 'youtube.com' not in content.lower():
+                    os.remove(cookies_path)
+                    return jsonify({
+                        'status': 'error', 
+                        'message': 'Invalid cookies file - must contain YouTube cookies'
+                    }), 400
+        except Exception as e:
+            if os.path.exists(cookies_path):
+                os.remove(cookies_path)
+            return jsonify({'status': 'error', 'message': f'Invalid file format: {str(e)}'}), 400
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Cookies uploaded successfully. YouTube downloads will now use these cookies.'
+        })
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/api/check_cookies', methods=['GET'])
+def api_check_cookies():
+    """Check if cookies file exists"""
+    cookies_path = app.config['COOKIES_FILE']
+    return jsonify({
+        'has_cookies': os.path.exists(cookies_path)
+    })
+
+
 @app.route('/api/download_youtube', methods=['POST'])
 def api_download_youtube():
     """Download audio from YouTube URL"""
@@ -345,17 +395,29 @@ def api_download_youtube():
             }
         }
         
-        # Add browser cookies only if not on Heroku
-        if not is_heroku:
+        # Check for uploaded cookie file first (works on both local and Heroku)
+        cookies_path = app.config['COOKIES_FILE']
+        
+        # Check for cookies from Heroku environment variable
+        heroku_cookies = os.environ.get('YOUTUBE_COOKIES')
+        if heroku_cookies and is_heroku:
+            # Write environment variable cookies to temp file
+            with open(cookies_path, 'w', encoding='utf-8') as f:
+                # Decode base64 if needed, or write directly
+                f.write(heroku_cookies.replace('\\n', '\n'))
+            ydl_opts['cookiefile'] = cookies_path
+            print(f"Using cookies from YOUTUBE_COOKIES environment variable")
+        elif os.path.exists(cookies_path):
+            ydl_opts['cookiefile'] = cookies_path
+            print(f"Using cookie file: {cookies_path}")
+        # Fallback to browser cookies if local and no cookie file
+        elif not is_heroku:
             try:
                 ydl_opts['cookiesfrombrowser'] = ('chrome',)
+                print("Using Chrome browser cookies")
             except:
-                pass  # Fallback if Chrome cookies unavailable
-        if not is_heroku:
-            try:
-                ydl_opts['cookiesfrombrowser'] = ('chrome',)
-            except:
-                pass  # Fallback if Chrome cookies unavailable
+                print("No cookies available - may encounter bot detection")
+                pass
         
         # Add ffmpeg location if not in PATH
         ffmpeg_path = shutil.which('ffmpeg')

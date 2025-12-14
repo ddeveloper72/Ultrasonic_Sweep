@@ -13,6 +13,7 @@ frequency_sweep/
 *.csv
 *.pdf
 .env
+youtube_cookies.txt
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md

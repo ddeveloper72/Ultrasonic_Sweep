@@ -30,4 +30,3 @@ heroku builds:create --app ultrasonic-sweep
 ```
 
 The FFmpeg buildpack will install a static build that doesn't require PulseAudio libraries.
-

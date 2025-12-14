@@ -33,6 +33,9 @@ function initializeEventListeners() {
     // Download YouTube button
     document.getElementById('downloadYoutubeBtn').addEventListener('click', handleYoutubeDownload);
 
+    // Upload cookies button
+    document.getElementById('uploadCookiesBtn').addEventListener('click', handleCookiesUpload);
+
     // Tremolo depth slider
     document.getElementById('tremoloDepth').addEventListener('input', function (e) {
         document.getElementById('tremoloDepthValue').textContent = e.target.value;
@@ -53,6 +56,9 @@ function initializeEventListeners() {
 
     // Download button
     document.getElementById('downloadBtn').addEventListener('click', handleDownload);
+
+    // Check cookie status on load
+    checkCookieStatus();
 
     // Audio player events
     if (audioPlayer) {
@@ -847,4 +853,57 @@ function drawRealtimeSpectrogram() {
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('Frequency →', -canvas.height + 10, 15);
     ctx.restore();
+}
+
+// Check if cookies file exists
+async function checkCookieStatus() {
+    try {
+        const response = await fetch('/api/check_cookies');
+        const data = await response.json();
+
+        if (data.has_cookies) {
+            document.getElementById('cookiesStatus').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error checking cookie status:', error);
+    }
+}
+
+// Handle cookie upload
+async function handleCookiesUpload() {
+    const fileInput = document.getElementById('cookiesUpload');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Please select a cookies file first');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('cookies', file);
+
+    try {
+        document.getElementById('uploadCookiesBtn').disabled = true;
+        document.getElementById('uploadCookiesBtn').innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+
+        const response = await fetch('/api/upload_cookies', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            document.getElementById('cookiesStatus').style.display = 'block';
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ ' + data.message);
+        }
+    } catch (error) {
+        alert('Error uploading cookies: ' + error.message);
+    } finally {
+        document.getElementById('uploadCookiesBtn').disabled = false;
+        document.getElementById('uploadCookiesBtn').innerHTML = '<i class="bi bi-upload"></i> Upload YouTube Cookies';
+        fileInput.value = '';
+    }
 }
