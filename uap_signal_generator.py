@@ -11,9 +11,14 @@ from scipy.fftpack import fft
 from scipy.signal import hilbert
 import pydub
 import os
+import shutil
 
-# Configure FFmpeg
-pydub.AudioSegment.converter = "C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe"
+# Configure FFmpeg - check for system ffmpeg first, then Windows path
+ffmpeg_path = shutil.which('ffmpeg')
+if not ffmpeg_path and os.path.exists("C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe"):
+    ffmpeg_path = "C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe"
+if ffmpeg_path:
+    pydub.AudioSegment.converter = ffmpeg_path
 
 
 def apply_amplitude_modulation(carrier, modulator):

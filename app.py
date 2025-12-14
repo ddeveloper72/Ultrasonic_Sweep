@@ -171,7 +171,17 @@ def generate_signal_task(task_id, data):
 def api_progress(task_id):
     """Stream progress updates via Server-Sent Events"""
     def generate():
+        # Send keep-alive and check status
+        import time
+        max_wait = 120  # 2 minutes max
+        start_time = time.time()
+        
         while task_id in generation_progress:
+            # Check timeout
+            if time.time() - start_time > max_wait:
+                yield f"data: {json.dumps({'status': 'error', 'error': 'Generation timeout'})}\n\n"
+                break
+            
             task_data = generation_progress[task_id]
             yield f"data: {json.dumps(task_data)}\n\n"
             
@@ -180,10 +190,11 @@ def api_progress(task_id):
                 threading.Timer(5.0, lambda: generation_progress.pop(task_id, None)).start()
                 break
             
-            import time
             time.sleep(0.5)  # Update every 500ms
     
-    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+    return Response(stream_with_context(generate()), 
+                   mimetype='text/event-stream',
+                   headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
 
 
 @app.route('/api/download/<filename>')
@@ -257,6 +268,7 @@ def api_download_youtube():
             })
         
         # Download audio using yt-dlp
+        import shutil
         ydl_opts = {
             'format': 'bestaudio/best',
             'postprocessors': [{
@@ -266,9 +278,13 @@ def api_download_youtube():
             }],
             'outtmpl': os.path.join(app.config['UPLOAD_FOLDER'], f'youtube_{video_id}.%(ext)s'),
             'quiet': True,
-            'no_warnings': True,
-            'ffmpeg_location': 'C:\\Users\\Duncan\\FFmpeg\\bin'
+            'no_warnings': True
         }
+        
+        # Add ffmpeg location if not in PATH
+        ffmpeg_path = shutil.which('ffmpeg')
+        if not ffmpeg_path and os.path.exists('C:\\Users\\Duncan\\FFmpeg\\bin'):
+            ydl_opts['ffmpeg_location'] = 'C:\\Users\\Duncan\\FFmpeg\\bin'
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=True)
