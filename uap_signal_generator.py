@@ -21,6 +21,7 @@ if not ffmpeg_path:
         "C:\\Users\\Duncan\\FFmpeg\\bin\\ffmpeg.exe",  # Windows
         '/usr/bin/ffmpeg',  # Standard Linux
         '/app/.apt/usr/bin/ffmpeg',  # Heroku with apt buildpack
+        '/app/vendor/ffmpeg/ffmpeg',  # Static build
     ]
     for path in possible_paths:
         if os.path.exists(path):
@@ -28,9 +29,14 @@ if not ffmpeg_path:
             break
 
 if ffmpeg_path:
+    # Set environment variable for ffmpeg location
+    os.environ['FFMPEG_BINARY'] = ffmpeg_path
+    os.environ['FFPROBE_BINARY'] = ffmpeg_path.replace('ffmpeg', 'ffprobe')
+    
     AudioSegment.converter = ffmpeg_path
     AudioSegment.ffmpeg = ffmpeg_path
     AudioSegment.ffprobe = ffmpeg_path.replace('ffmpeg', 'ffprobe')
+    print(f"FFmpeg configured at: {ffmpeg_path}")
 else:
     print("WARNING: FFmpeg not found!")
 

@@ -1,22 +1,23 @@
 # Heroku Buildpack Configuration
 
-To enable FFmpeg on Heroku, you need to add buildpacks using the Heroku CLI:
+To enable FFmpeg on Heroku, you need to use a static FFmpeg buildpack:
 
 ```bash
 # Login to Heroku
 heroku login
 
-# Add the Apt buildpack (for installing system packages)
-heroku buildpacks:add --index 1 heroku-community/apt --app ultrasonic-sweep
+# Clear existing buildpacks
+heroku buildpacks:clear --app ultrasonic-sweep
 
-# Add the Python buildpack (should be added automatically, but ensure it's there)
+# Add the static FFmpeg buildpack
+heroku buildpacks:add --index 1 https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git --app ultrasonic-sweep
+
+# Add the Python buildpack
 heroku buildpacks:add --index 2 heroku/python --app ultrasonic-sweep
 
 # Verify buildpacks are configured
 heroku buildpacks --app ultrasonic-sweep
 ```
-
-The `Aptfile` in the repository will tell the Apt buildpack to install FFmpeg.
 
 After adding buildpacks, redeploy:
 ```bash
@@ -27,3 +28,6 @@ Or trigger a rebuild:
 ```bash
 heroku builds:create --app ultrasonic-sweep
 ```
+
+The FFmpeg buildpack will install a static build that doesn't require PulseAudio libraries.
+
