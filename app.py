@@ -87,8 +87,19 @@ def api_presets():
 @app.route('/api/preset/<preset_name>')
 def api_preset(preset_name):
     """Get a specific preset configuration"""
-    preset = get_preset(preset_name)
-    return jsonify(preset)
+    try:
+        # Validate preset name to prevent injection
+        if not preset_name or len(preset_name) > 50 or not preset_name.replace('_', '').isalnum():
+            return jsonify({'error': 'Invalid preset name'}), 400
+        
+        preset = get_preset(preset_name)
+        if not preset:
+            return jsonify({'error': 'Preset not found'}), 404
+        
+        return jsonify(preset)
+    except Exception as e:
+        print(f"Error fetching preset {preset_name}: {str(e)}")
+        return jsonify({'error': 'Failed to load preset'}), 500
 
 
 @app.route('/api/generate', methods=['POST'])
@@ -96,7 +107,15 @@ def api_generate():
     """Initiate signal generation and return task ID"""
     try:
         data = request.json
-        print(f"[GENERATE] Received request: {data.get('preset_name', 'unknown')}")
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+        
+        # Validate required fields
+        preset_name = data.get('preset_name', '')
+        if not preset_name or len(preset_name) > 50:
+            return jsonify({'status': 'error', 'message': 'Invalid preset name'}), 400
+        
+        print(f"[GENERATE] Received request: {preset_name}")
         task_id = str(uuid.uuid4())
         print(f"[GENERATE] Created task ID: {task_id}")
         
@@ -224,6 +243,13 @@ def generate_signal_task(task_id, data):
 @app.route('/api/progress/<task_id>')
 def api_progress(task_id):
     """Stream progress updates via Server-Sent Events"""
+    try:
+        # Validate task_id format (UUID)
+        try:
+            uuid.UUID(task_id)
+        except ValueError:
+            return jsonify({'status': 'error', 'error': 'Invalid task ID format'}), 400
+    
     def generate():
         import time
         
@@ -284,44 +310,62 @@ def api_progress(task_id):
 @app.route('/api/download/<task_id>')
 def api_download(task_id):
     """Download generated signal file from memory"""
-    # Check if task exists and has completed
-    if task_id not in generation_progress:
-        return jsonify({'status': 'error', 'message': 'Task not found'}), 404
+    try:
+        # Validate task_id format (UUID)
+        try:
+            uuid.UUID(task_id)
+        except ValueError:
+            return jsonify({'status': 'error', 'message': 'Invalid task ID format'}), 400
+        
+        # Check if task exists and has completed
+        if task_id not in generation_progress:
+            return jsonify({'status': 'error', 'message': 'Task not found or expired'}), 404
+        
+        task = generation_progress[task_id]
+        if task['status'] != 'completed':
+            return jsonify({'status': 'error', 'message': 'Generation not complete'}), 400
+        
+        if not task.get('result') or 'mp3_data' not in task['result']:
+            return jsonify({'status': 'error', 'message': 'File data not available'}), 404
+        
+        # Create BytesIO from stored data
+        mp3_buffer = io.BytesIO(task['result']['mp3_data'])
+        mp3_buffer.seek(0)
+        
+        filename = task['result'].get('filename', 'UAP_Signal.mp3')
+        
+        return send_file(
+            mp3_buffer,
+            mimetype='audio/mpeg',
+            as_attachment=True,
+            download_name=filename
+        )
     
-    task = generation_progress[task_id]
-    if task['status'] != 'completed':
-        return jsonify({'status': 'error', 'message': 'Generation not complete'}), 400
-    
-    if not task.get('result') or 'mp3_data' not in task['result']:
-        return jsonify({'status': 'error', 'message': 'File data not available'}), 404
-    
-    # Create BytesIO from stored data
-    mp3_buffer = io.BytesIO(task['result']['mp3_data'])
-    mp3_buffer.seek(0)
-    
-    filename = task['result'].get('filename', 'UAP_Signal.mp3')
-    
-    return send_file(
-        mp3_buffer,
-        mimetype='audio/mpeg',
-        as_attachment=True,
-        download_name=filename
-    )
+    except Exception as e:
+        print(f"Download error for task {task_id}: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'Failed to download file'}), 500
 
 
 @app.route('/api/upload_music', methods=['POST'])
 def api_upload_music():
     """Upload music file for signal modulation (stored in memory)"""
-    if 'file' not in request.files:
-        return jsonify({'status': 'error', 'message': 'No file provided'}), 400
-    
-    file = request.files['file']
-    
-    if file.filename == '':
-        return jsonify({'status': 'error', 'message': 'No file selected'}), 400
-    
-    if file and allowed_file(file.filename):
+    try:
+        if 'file' not in request.files:
+            return jsonify({'status': 'error', 'message': 'No file provided'}), 400
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'No file selected'}), 400
+        
+        if not file or not allowed_file(file.filename):
+            return jsonify({'status': 'error', 'message': 'Invalid file type. Allowed: mp3, wav, ogg, flac, m4a'}), 400
+        
         filename = secure_filename(file.filename)
+        
+        # Validate filename
+        if not filename or len(filename) > 255:
+            return jsonify({'status': 'error', 'message': 'Invalid filename'}), 400
         
         # Read file into memory
         file_data = file.read()
@@ -349,7 +393,9 @@ def api_upload_music():
             'size_mb': round(file_size_mb, 2)
         })
     
-    return jsonify({'status': 'error', 'message': 'Invalid file type. Supported: MP3, WAV, OGG, FLAC, M4A'}), 400
+    except Exception as e:
+        print(f"Upload error: {str(e)}")
+        return jsonify({'status': 'error', 'message': 'Failed to process uploaded file'}), 500
 
 
 @app.route('/api/upload_cookies', methods=['POST'])
@@ -623,6 +669,42 @@ def get_fft_data(audio_segment, bins=512):
         'frequencies': freq_bins.tolist(),
         'magnitudes': mag_bins.tolist()
     }
+
+
+# Global error handlers for graceful fallback
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors"""
+    if request.path.startswith('/api/'):
+        return jsonify({'status': 'error', 'message': 'Resource not found'}), 404
+    return render_template('404.html'), 404 if os.path.exists('templates/404.html') else ('Not Found', 404)
+
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    """Handle file too large errors"""
+    return jsonify({'status': 'error', 'message': 'File too large. Maximum size is 10MB.'}), 413
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle internal server errors"""
+    print(f"Internal server error: {str(error)}")
+    if request.path.startswith('/api/'):
+        return jsonify({'status': 'error', 'message': 'Internal server error'}), 500
+    return 'Internal Server Error', 500
+
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    """Catch-all exception handler"""
+    print(f"Unhandled exception: {str(error)}")
+    import traceback
+    traceback.print_exc()
+    
+    if request.path.startswith('/api/'):
+        return jsonify({'status': 'error', 'message': 'An unexpected error occurred'}), 500
+    return 'An unexpected error occurred', 500
 
 
 if __name__ == '__main__':
