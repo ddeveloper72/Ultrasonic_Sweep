@@ -1,6 +1,10 @@
 # Ignore folder
 .vscode
 .venv
+BS_Pleiadian_frequencies/
+Pleiadian_frequencies/
+frequency_analyser/
+frequency_sweep/
 # Ignore files
 *.pyc
 *.mp3
