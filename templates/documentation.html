@@ -113,7 +113,7 @@
         .documentation-content p img[src*="shields.io"],
         .documentation-content p img[src*="badge"] {
             display: inline-block;
-            margin: 0.15rem 0.2rem;
+            margin: 0;
             max-width: 100%;
             height: auto;
         }
@@ -123,24 +123,26 @@
         .documentation-content p:has(img[src*="badge"]) {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.3rem;
+            gap: 0.4rem;
             align-items: center;
-            margin: 0.5rem 0;
-            line-height: 1.2;
+            justify-content: flex-start;
+            margin: 0.75rem 0;
+            line-height: 1;
         }
 
         /* On very small screens, make badges smaller */
         @media (max-width: 480px) {
+
             .documentation-content p img[src*="shields.io"],
             .documentation-content p img[src*="badge"] {
-                max-width: 48%;
-                margin: 0.1rem 0.1rem;
+                flex: 0 0 calc(50% - 0.2rem);
+                max-width: calc(50% - 0.2rem);
             }
 
             .documentation-content p:has(img[src*="shields.io"]),
             .documentation-content p:has(img[src*="badge"]) {
-                gap: 0.2rem;
-                justify-content: center;
+                gap: 0.4rem;
+                justify-content: space-between;
             }
         }
 
