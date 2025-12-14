@@ -313,6 +313,11 @@ def api_download_youtube():
         
         # Download audio using yt-dlp
         import shutil
+        import platform
+        
+        # Detect if running on Heroku
+        is_heroku = os.environ.get('DYNO') is not None
+        
         ydl_opts = {
             'format': 'bestaudio/best',
             'postprocessors': [{
@@ -322,8 +327,22 @@ def api_download_youtube():
             }],
             'outtmpl': os.path.join(app.config['UPLOAD_FOLDER'], f'youtube_{video_id}.%(ext)s'),
             'quiet': True,
-            'no_warnings': True
+            'no_warnings': True,
+            # Use po_token method for Heroku, browser cookies for local
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'ios', 'web'],
+                    'skip': ['hls', 'dash']
+                }
+            }
         }
+        
+        # Add browser cookies only if not on Heroku
+        if not is_heroku:
+            try:
+                ydl_opts['cookiesfrombrowser'] = ('chrome',)
+            except:
+                pass  # Fallback if Chrome cookies unavailable
         
         # Add ffmpeg location if not in PATH
         ffmpeg_path = shutil.which('ffmpeg')
