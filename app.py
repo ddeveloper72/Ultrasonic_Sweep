@@ -19,13 +19,16 @@ import yt_dlp
 import re
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size for music uploads
 app.config['UPLOAD_FOLDER'] = 'source_files'
 app.config['OUTPUT_FOLDER'] = 'generated_signals'
 app.config['COOKIES_FILE'] = 'youtube_cookies.txt'
 
 # Store progress data for each generation task
 generation_progress = {}
+
+# Store uploaded music files in memory (filename -> bytes)
+uploaded_music_files = {}
 
 # Ensure output directory exists
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
@@ -133,15 +136,17 @@ def generate_signal_task(task_id, data):
         use_music = data.get('use_music', False)
         music_file = data.get('music_file', None)
         
-        # Determine music file path
+        # Determine music file path or data
         music_path = None
         if use_music and music_file:
-            music_path = os.path.join(app.config['UPLOAD_FOLDER'], music_file)
-            if not os.path.exists(music_path):
-                print(f"[TASK {task_id}] Music file not found: {music_path}")
-                music_path = None
+            # Check if file exists in memory
+            if music_file in uploaded_music_files:
+                # Create temporary file from memory for processing
+                music_path = io.BytesIO(uploaded_music_files[music_file])
+                print(f"[TASK {task_id}] Using music file from memory: {music_file}")
             else:
-                print(f"[TASK {task_id}] Using music file: {music_path}")
+                print(f"[TASK {task_id}] Music file not found in memory: {music_file}")
+                music_path = None
         
         # Progress callback
         def update_progress(progress, message):
@@ -181,7 +186,7 @@ def generate_signal_task(task_id, data):
             'metadata': metadata,
             'waveform': waveform_data,
             'fft': fft_data,
-            'mp3_data': mp3_buffer.getvalue()  # Store raw bytes
+            'mp3_data': mp3_buffer.getvalue(),  # Store raw bytes
             'duration_ms': len(signal)
         }
         
@@ -277,7 +282,7 @@ def api_download(task_id):
 
 @app.route('/api/upload_music', methods=['POST'])
 def api_upload_music():
-    """Upload music file for signal modulation"""
+    """Upload music file for signal modulation (stored in memory)"""
     if 'file' not in request.files:
         return jsonify({'status': 'error', 'message': 'No file provided'}), 400
     
@@ -288,21 +293,34 @@ def api_upload_music():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
         
-        # Get file info
-        audio = AudioSegment.from_file(filepath)
+        # Read file into memory
+        file_data = file.read()
+        
+        # Check file size (already enforced by MAX_CONTENT_LENGTH, but double-check)
+        file_size_mb = len(file_data) / (1024 * 1024)
+        if file_size_mb > 10:
+            return jsonify({
+                'status': 'error', 
+                'message': f'File too large ({file_size_mb:.1f}MB). Maximum size is 10MB.'
+            }), 400
+        
+        # Store in memory
+        uploaded_music_files[filename] = file_data
+        
+        # Get file info by loading from memory
+        audio = AudioSegment.from_file(io.BytesIO(file_data))
         duration_ms = len(audio)
         
         return jsonify({
             'status': 'success',
             'filename': filename,
             'duration_ms': duration_ms,
-            'duration_seconds': duration_ms / 1000
+            'duration_seconds': duration_ms / 1000,
+            'size_mb': round(file_size_mb, 2)
         })
     
-    return jsonify({'status': 'error', 'message': 'Invalid file type'}), 400
+    return jsonify({'status': 'error', 'message': 'Invalid file type. Supported: MP3, WAV, OGG, FLAC, M4A'}), 400
 
 
 @app.route('/api/upload_cookies', methods=['POST'])
@@ -483,21 +501,21 @@ def extract_video_id(url):
 
 @app.route('/api/list_music')
 def api_list_music():
-    """List available music files"""
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        return jsonify({'files': []})
-    
+    """List available music files from memory"""
     files = []
-    for filename in os.listdir(app.config['UPLOAD_FOLDER']):
-        if allowed_file(filename):
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            try:
-                audio = AudioSegment.from_file(filepath)
-                files.append({
-                    'filename': filename,
-                    'duration_ms': len(audio),
-                    'duration_seconds': len(audio) / 1000
-                })
+    
+    for filename, file_data in uploaded_music_files.items():
+        try:
+            audio = AudioSegment.from_file(io.BytesIO(file_data))
+            files.append({
+                'filename': filename,
+                'duration_ms': len(audio),
+                'duration_seconds': len(audio) / 1000,
+                'size_mb': round(len(file_data) / (1024 * 1024), 2)
+            })
+        except Exception as e:
+            print(f"Error reading music file {filename}: {e}")
+            continue
             except:
                 pass
     
