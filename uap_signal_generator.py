@@ -251,10 +251,10 @@ def generate_hybrid_uap_signal(music_file_path=None, duration_ms=10000, config=N
 
 
 if __name__ == "__main__":
-    # Example usage
-    music_path = os.path.join("source_files", "Gerry_Rafferty_Baker_Street_(UK).mp4")
+    # Example usage - generate signal without music
+    # To use music, provide path to your audio file or use the web dashboard
     
-    signal, meta = generate_hybrid_uap_signal(music_file_path=music_path)
+    signal, meta = generate_hybrid_uap_signal(duration_ms=10000)
     
     signal.export("UAP_Hybrid_Contact_Signal.mp3", format="mp3")
     print("Hybrid UAP Contact Signal generated!")

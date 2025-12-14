@@ -43,6 +43,23 @@ def index():
     return render_template('dashboard.html', presets=presets)
 
 
+@app.route('/documentation')
+def documentation():
+    """Documentation page"""
+    return render_template('documentation.html')
+
+
+@app.route('/api/documentation')
+def api_documentation():
+    """Get markdown documentation content"""
+    try:
+        with open('README.md', 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    except Exception as e:
+        return f"Error loading documentation: {str(e)}", 500
+
+
 @app.route('/api/presets')
 def api_presets():
     """Get all available presets"""
