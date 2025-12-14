@@ -303,7 +303,9 @@ graph TD
 
 ### Quick Start with YouTube
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/03-spectrogram-visualization.png" alt="Spectrogram Visualization" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/07-music-integration.png" alt="Music Integration Options" width="800">
+
+*Music integration interface with YouTube URL input and file upload options*
 
 1. Paste a YouTube URL into the "YouTube URL" field
 2. Click "Download from YouTube" - audio extracts automatically
@@ -314,9 +316,9 @@ graph TD
 7. Use playback controls to preview the signal
 8. Click "Download Signal" to save as MP3
 
-<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/05-frequency-configuration.png" alt="Frequency Configuration" width="800">
+<img src="https://raw.githubusercontent.com/ddeveloper72/Ultrasonic_Sweep/main/static/images/08-playback-controls.png" alt="Playback Controls" width="800">
 
-*Frequency configuration card section with tone frequency controls*
+*Music playback and download controls with Play, Pause, Stop, and Download buttons*
 
 ### Advanced Workflow
 
