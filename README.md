@@ -1133,23 +1133,33 @@ We acknowledge the UAP research community's pioneering work in frequency-based c
 - Human role: All design decisions, signal parameters, creative direction, final approval
 - Collaboration documented: Complete git history with descriptive commits
 
-**Human Oversight**:
-- Human developer maintains full control over all generated code
-- All AI suggestions reviewed and validated before implementation  
-- Human responsible for application behavior and outputs
-- No automated decision-making affecting individuals
+**Development Accountability**:
+- Developer maintains full control over code development and AI tool usage
+- All AI-generated code reviewed and validated before integration
+- Development process documented with transparent human-AI collaboration boundaries
+- Source code is open-source for community review and contribution
+
+**User Responsibility**:
+- **This is a research and creative tool provided "as-is" without warranties**
+- Users are solely responsible for their own use of generated signals
+- Developer is not liable for how users choose to deploy or utilize the application
+- Users must comply with local laws regarding radio frequency emissions and broadcasting
+- No guarantees are made regarding signal efficacy or outcomes
 
 **Risk Assessment**:
 - No high-risk use case (not used for critical infrastructure, law enforcement, biometrics)
-- No personal data processing
-- Research and creative tool only
+- No personal data processing beyond temporary session data
+- Research and creative experimentation tool only
 - Output signals are artistic/scientific expressions, not autonomous systems
+- No automated decision-making affecting individuals
 
 **Documentation**:
 - Source code fully documented and version controlled
 - Architecture and decision rationale explained in README
 - Dependencies and technical requirements specified
 - Human-AI contribution boundaries clearly defined
+
+**Disclaimer**: This open-source project is provided for educational and research purposes. The developer makes no claims about the effectiveness of generated signals and accepts no liability for user actions. Users assume all responsibility for compliance with applicable regulations and laws.
 
 This project serves as an example of **transparent, human-centric AI development** in accordance with EU AI Act principles of accountability, transparency, and human oversight.
 
