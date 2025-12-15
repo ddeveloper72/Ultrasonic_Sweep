@@ -20,79 +20,79 @@ SIGNAL_PRESETS = {
             "tremolo_depth": 0.5
         }
     },
-    "music_enhanced": {
-        "name": "Music Enhanced Signal",
-        "description": "Combines music modulation with Schumann tremolo for intelligent signaling",
+    "schumann_pure": {
+        "name": "Schumann Resonance (Pure)",
+        "description": "Earth's natural electromagnetic frequency - pure 7.83 Hz foundation",
         "config": {
-            "base_tone_freq": 100,
+            "base_tone_freq": 7.83,
             "schumann_freq": 7.83,
             "dna_repair_freq": 528,
-            "ultrasonic_freq": 17000,
-            "chirp_freq": 2500,
-            "ambient_freq": 432,
-            "use_music_modulation": True,
-            "use_tremolo": True,
-            "tremolo_depth": 0.5
-        }
-    },
-    "harmonic_focus": {
-        "name": "Harmonic Focus",
-        "description": "Emphasizes Solfeggio frequencies (528 Hz, 432 Hz) with subtle modulation",
-        "config": {
-            "base_tone_freq": 100,
-            "schumann_freq": 7.83,
-            "dna_repair_freq": 528,
-            "ultrasonic_freq": 17000,
-            "chirp_freq": 2500,
-            "ambient_freq": 432,
-            "use_music_modulation": True,
-            "use_tremolo": True,
-            "tremolo_depth": 0.3
-        }
-    },
-    "earth_heartbeat": {
-        "name": "Earth Heartbeat",
-        "description": "Strong Schumann resonance with deep tremolo pulsing",
-        "config": {
-            "base_tone_freq": 100,
-            "schumann_freq": 7.83,
-            "dna_repair_freq": 528,
-            "ultrasonic_freq": 17000,
-            "chirp_freq": 2500,
+            "ultrasonic_freq": 15000,
+            "chirp_freq": 1500,
             "ambient_freq": 432,
             "use_music_modulation": False,
             "use_tremolo": True,
             "tremolo_depth": 0.7
         }
     },
-    "pure_carriers": {
-        "name": "Pure Carrier Waves",
-        "description": "Unmodulated carrier frequencies for maximum clarity",
+    "solfeggio_healing": {
+        "name": "Solfeggio Healing Tones",
+        "description": "Ancient healing frequencies - 396 Hz (liberation), 528 Hz (transformation), 852 Hz (intuition)",
         "config": {
-            "base_tone_freq": 100,
+            "base_tone_freq": 396,
             "schumann_freq": 7.83,
             "dna_repair_freq": 528,
-            "ultrasonic_freq": 17000,
-            "chirp_freq": 2500,
+            "ultrasonic_freq": 18000,
+            "chirp_freq": 852,
             "ambient_freq": 432,
-            "use_music_modulation": False,
-            "use_tremolo": False,
-            "tremolo_depth": 0.0
+            "use_music_modulation": True,
+            "use_tremolo": True,
+            "tremolo_depth": 0.4
         }
     },
-    "biological_mimic": {
-        "name": "Biological Mimic",
-        "description": "Maximum organic 'alive' quality with music and tremolo",
+    "cosmic_alignment": {
+        "name": "Cosmic Alignment",
+        "description": "Planetary frequencies - Venus (221.23 Hz), Earth-Moon (210.42 Hz), higher harmonics",
+        "config": {
+            "base_tone_freq": 136.1,
+            "schumann_freq": 7.83,
+            "dna_repair_freq": 221.23,
+            "ultrasonic_freq": 16500,
+            "chirp_freq": 3000,
+            "ambient_freq": 210.42,
+            "use_music_modulation": False,
+            "use_tremolo": True,
+            "tremolo_depth": 0.5
+        }
+    },
+    "alpha_theta_gateway": {
+        "name": "Alpha-Theta Gateway",
+        "description": "Brainwave entrainment - Alpha (10.5 Hz) meets Theta (6 Hz) for deep meditation",
         "config": {
             "base_tone_freq": 100,
-            "schumann_freq": 7.83,
+            "schumann_freq": 6.0,
             "dna_repair_freq": 528,
-            "ultrasonic_freq": 17000,
-            "chirp_freq": 2500,
+            "ultrasonic_freq": 17500,
+            "chirp_freq": 2000,
             "ambient_freq": 432,
             "use_music_modulation": True,
             "use_tremolo": True,
             "tremolo_depth": 0.6
+        }
+    },
+    "golden_ratio": {
+        "name": "Golden Ratio Harmonics",
+        "description": "Fibonacci sequence frequencies - 89 Hz, 144 Hz, 233 Hz, 377 Hz (phi relationships)",
+        "config": {
+            "base_tone_freq": 89,
+            "schumann_freq": 8.0,
+            "dna_repair_freq": 233,
+            "ultrasonic_freq": 17000,
+            "chirp_freq": 377,
+            "ambient_freq": 144,
+            "use_music_modulation": False,
+            "use_tremolo": True,
+            "tremolo_depth": 0.3
         }
     }
 }

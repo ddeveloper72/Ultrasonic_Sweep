@@ -27,6 +27,12 @@ function initializeEventListeners() {
     // Preset selector
     document.getElementById('presetSelector').addEventListener('change', handlePresetChange);
 
+    // Reset frequencies button
+    const resetFreqBtn = document.getElementById('resetFreqBtn');
+    if (resetFreqBtn) {
+        resetFreqBtn.addEventListener('click', handleResetFrequencies);
+    }
+
     // Music switch
     document.getElementById('useMusicSwitch').addEventListener('change', handleMusicSwitchChange);
 
@@ -122,6 +128,25 @@ function handlePresetChange(e) {
             document.getElementById('tremoloDepthValue').textContent = Math.round(config.tremolo_depth * 100);
         })
         .catch(error => console.error('Error loading preset:', error));
+}
+
+function handleResetFrequencies() {
+    // Reset all frequency inputs to their default values
+    const freqInputs = document.querySelectorAll('.freq-input');
+    freqInputs.forEach(input => {
+        const defaultValue = input.getAttribute('data-default');
+        if (defaultValue) {
+            input.value = defaultValue;
+        }
+    });
+    
+    // Show brief confirmation
+    const resetBtn = document.getElementById('resetFreqBtn');
+    const originalHTML = resetBtn.innerHTML;
+    resetBtn.innerHTML = '<i class="bi bi-check-circle"></i> Reset!';
+    setTimeout(() => {
+        resetBtn.innerHTML = originalHTML;
+    }, 1500);
 }
 
 function handleMusicSwitchChange(e) {
