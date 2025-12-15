@@ -421,8 +421,9 @@ def api_progress(task_id):
             
             task_data = generation_progress[task_id]
             
-            # Create a copy without mp3_data (bytes not JSON serializable)
+            # Create a copy without mp3_data (bytes) and timestamp (datetime) - not JSON serializable
             sse_data = task_data.copy()
+            sse_data.pop('timestamp', None)  # Remove timestamp from SSE
             if 'result' in sse_data and sse_data['result']:
                 sse_data['result'] = sse_data['result'].copy()
                 sse_data['result'].pop('mp3_data', None)  # Remove bytes from SSE
