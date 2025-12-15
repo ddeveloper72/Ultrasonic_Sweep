@@ -9,6 +9,52 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+    <style>
+        /* Mobile navbar optimization */
+        .navbar {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .navbar .container-fluid {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand {
+            font-size: 1rem !important;
+            margin-bottom: 0 !important;
+        }
+
+        .navbar .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .navbar .badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.5rem;
+        }
+
+        /* Stack navbar items on very small screens */
+        @media (max-width: 576px) {
+            .navbar .container-fluid {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .navbar-brand {
+                width: 100%;
+                text-align: center;
+                font-size: 0.95rem !important;
+            }
+
+            .navbar .badge {
+                width: 100%;
+                display: block;
+                order: 3;
+            }
+        }
+    </style>
 </head>
 
 <body>
