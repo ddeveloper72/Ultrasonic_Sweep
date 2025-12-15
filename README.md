@@ -94,10 +94,19 @@ graph TB
         A --> E[Visualization Canvas]
     end
     
+    subgraph "Security Layer"
+        SEC1[Rate Limiter] --> F
+        SEC2[API Key Auth] --> F
+        SEC3[CORS Handler] --> F
+        SEC4[Input Validator] --> F
+        SEC5[Resource Manager] --> F
+    end
+    
     subgraph "Processing Layer"
         F[Flask API Server] --> G[Signal Generator Engine]
         F --> H[YouTube Downloader yt-dlp]
         F --> I[Progress Tracking SSE]
+        F --> CLN[Cleanup Tasks]
     end
     
     subgraph "Signal Generation Pipeline"
@@ -119,11 +128,19 @@ graph TB
         P --> S[Spectrogram]
     end
     
+    A --> SEC1
     C --> H
     H --> G
     D --> G
     I --> A
     O --> E
+    CLN -.-> G
+    
+    style SEC1 fill:#FF6B6B
+    style SEC2 fill:#FF6B6B
+    style SEC3 fill:#FF6B6B
+    style SEC4 fill:#FF6B6B
+    style SEC5 fill:#FF6B6B
 ```
 
 ## Signal Generation Flow
