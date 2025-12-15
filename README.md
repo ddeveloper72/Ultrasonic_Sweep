@@ -1064,6 +1064,65 @@ This project demonstrates **responsible AI collaboration** where:
 
 The git commit history provides complete transparency of this collaboration, showing the evolution from initial concept to production-ready application.
 
+## Inspiration & Credits
+
+This project draws inspiration from the UAP contact research community, particularly:
+
+### Primary Inspiration Sources
+
+**UAP Watchers - "The Ultimate UAP Dog Whistle Guide"**
+- **Resource**: [uapwatchers.com/build-a-uap-dog-whistle-guide](https://uapwatchers.com/build-a-uap-dog-whistle-guide/)
+- **Author**: Skywatch Signal
+- **Concepts Adopted**:
+  - **Frequency-based contact protocols**: Using specific Hz values believed to facilitate UAP interaction
+  - **Multi-layer signal architecture**: Combining carrier tones, harmonics, and ultrasonic components
+  - **Schumann resonance integration**: 7.83 Hz as Earth's electromagnetic "heartbeat" for modulation
+  - **Solfeggio frequencies**: 528 Hz (DNA repair/transformation), 432 Hz (universal harmony)
+  - **Ultrasonic ping methodology**: High-frequency pulses (15-20 kHz) for non-human technology detection
+  - **CE5 protocol concepts**: Consciousness-linked experimentation combining sound, technology, and intention
+
+**brycehelm/UAP_Dog_Whistle**
+- **Repository**: [github.com/brycehelm/UAP_Dog_Whistle](https://github.com/brycehelm/UAP_Dog_Whistle)
+- **Author**: @brycehelm (inspired by @Truthpolex on X)
+- **Concepts Referenced**:
+  - **Layered audio composition**: Multiple frequency layers working in concert
+  - **Amplitude modulation at 7.83 Hz**: Applying Schumann resonance as a modulation envelope
+  - **"Alive" signal characteristics**: Organic chirps and tremolo effects to mimic biological signaling
+  - **Specific frequency choices**: 783 Hz, 528 Hz, 2.5 kHz chirps, 17 kHz ultrasonic pings, 432 Hz ambient pad
+
+### Our Implementation
+
+This project **extends and enhances** these concepts by:
+
+1. **Interactive Web Dashboard**: User-friendly interface for real-time signal customization
+2. **Dynamic Frequency Control**: All core frequencies editable with preset configurations
+3. **Music Integration**: Novel approach using music as a carrier for human expression and non-repetitive patterns
+4. **Real-time Visualization**: Live waveform, FFT spectrum, and spectrogram analysis
+5. **Progress Tracking**: Server-Sent Events (SSE) for live generation monitoring
+6. **Preset System**: Six distinct contact strategies (Schumann Pure, Solfeggio Healing, Cosmic Alignment, etc.)
+7. **Production Deployment**: Full Heroku hosting with security features (rate limiting, API authentication)
+8. **Open Source Transparency**: Complete documentation and human-AI collaboration attribution
+
+### Key Differences
+
+While inspired by the UAP Watchers guide and brycehelm's work, our implementation:
+- Uses **Python + Flask** for signal generation (vs. Audacity manual editing)
+- Provides **web-based user interface** (vs. command-line scripts)
+- Adds **music modulation** as a unique layer for human signature
+- Implements **diverse presets** with varied frequency combinations (Golden Ratio, Planetary, Brainwave)
+- Includes **security hardening** for public deployment
+- Offers **API access** for programmatic signal generation
+
+### Attribution Statement
+
+We acknowledge the UAP research community's pioneering work in frequency-based contact protocols. This project builds upon their open-source philosophy of experimentation, transparency, and curiosity-driven discovery. All core frequency concepts (Schumann resonance, Solfeggio tones, ultrasonic pings) originate from community research and are implemented here with technical enhancements and user experience improvements.
+
+**Special Thanks**:
+- UAP Watchers / Skywatch Signal for comprehensive contact methodologies
+- @brycehelm for demonstrating Schumann-modulated signal composition
+- @Truthpolex for inspiring the original UAP Dog Whistle concept
+- The broader UAP/CE5 community for ongoing experimentation and open sharing
+
 ## EU AI Act Compliance Statement
 
 **System Classification**: Low-risk AI system (General Purpose AI used for creative/research purposes)
