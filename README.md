@@ -7,6 +7,18 @@
 
 🚀 **[Live Demo](https://ultrasonic-sweep-f346d41ecd97.herokuapp.com/)** | 📚 **[Documentation](https://ultrasonic-sweep-f346d41ecd97.herokuapp.com/documentation)**
 
+## ⚠️ Safety Warning
+
+**IMPORTANT - READ BEFORE USE:**
+
+- **Hearing Safety**: Signals contain ultrasonic frequencies (15-20 kHz) that may be harmful at high volumes. Use moderate volume levels and avoid prolonged exposure with headphones.
+- **Photosensitivity**: The visualization features contain flashing lights and rapid color changes that may trigger seizures in people with photosensitive epilepsy.
+- **No Medical Claims**: This tool makes no therapeutic or health claims. Consult medical professionals if you have hearing conditions, epilepsy, or other health concerns.
+- **User Responsibility**: You assume all risks associated with using this application. Follow local laws regarding audio broadcasting and radio frequency emissions.
+- **As-Is Provision**: This software is provided without warranties. The developer is not liable for any harm, damage, or adverse effects from your use of this tool.
+
+**Recommended Safe Use**: Start at low volume, take breaks every 30 minutes, avoid use if you have known sensitivity to audio frequencies or flashing lights.
+
 ## Project Vision & Intent
 
 This application represents a unique collaboration between human intuition and artificial intelligence to create a **hybrid communication signal** designed for potential contact with Unknown Aerial Phenomena (UAP). Unlike conventional signal generation, this project weaves together:
@@ -24,7 +36,7 @@ This project was developed as a **human-AI collaborative system** in accordance 
 
 - **Transparency**: This README clearly states AI involvement (GitHub Copilot/Claude) in code generation and architectural decisions
 - **Human Oversight**: All design decisions, frequency selections, and creative direction determined by human researcher
-- **Accountability**: Human developer maintains full responsibility for application behavior and outputs
+- **Development Process**: Developer maintains control over code development and AI tool usage, with all AI-generated code reviewed before integration
 - **Risk Classification**: Low-risk AI system (creative/research tool, no automated decision-making affecting individuals)
 - **Documentation**: Complete source code, decision rationale, and collaboration process documented in git history
 
@@ -1060,9 +1072,11 @@ This project demonstrates **responsible AI collaboration** where:
 2. **AI implements technical solution** - How to build it efficiently  
 3. **Human validates and directs** - Quality control and creative decisions
 4. **AI adapts and refines** - Iterative improvement based on feedback
-5. **Human maintains accountability** - Final responsibility for all outputs
+5. **Human maintains development oversight** - Code review and quality control for the development process
 
 The git commit history provides complete transparency of this collaboration, showing the evolution from initial concept to production-ready application.
+
+**Important**: The developer's accountability is limited to the **development process** (code quality, AI collaboration transparency). Users assume all responsibility for their use of the application, including compliance with safety guidelines and local regulations.
 
 ## Inspiration & Credits
 
