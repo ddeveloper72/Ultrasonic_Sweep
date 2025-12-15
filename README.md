@@ -543,7 +543,7 @@ Each visualization updates in real-time during playback (~60fps) using the Web A
    - `yt-dlp>=2024.0.0` - YouTube audio extraction
    - `matplotlib>=3.7.0` - Visualization generation
 
-3. **FFmpeg Required**: Ensure FFmpeg is installed at `C:\Users\Duncan\FFmpeg\bin\ffmpeg.exe`
+3. **FFmpeg Required**: Ensure FFmpeg is installed at `C:\Users\<user>\FFmpeg\bin\ffmpeg.exe`
    - Download from: https://ffmpeg.org/download.html
    - Or update path in `uap_signal_generator.py` line 17
 
