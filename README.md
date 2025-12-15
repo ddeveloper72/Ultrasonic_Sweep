@@ -857,13 +857,136 @@ Get the raw README.md content.
 
 ---
 
+### Security Features
+
+#### API Key Authentication
+
+Protect sensitive endpoints with optional API key authentication.
+
+**Setup:**
+1. Generate a secure API key:
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(32))"
+   ```
+
+2. Set environment variable:
+   ```bash
+   # Local development (.env file)
+   API_KEY=your-generated-key-here
+   
+   # Heroku deployment
+   heroku config:set API_KEY=your-generated-key-here
+   ```
+
+3. Include API key in requests:
+   - **Header:** `X-API-Key: your-key`
+   - **Query parameter:** `?api_key=your-key`
+
+**Protected Endpoints:**
+- `POST /api/generate` - Signal generation
+- `POST /api/upload_music` - Music file uploads
+- `POST /api/upload_cookies` - Cookie file uploads
+- `POST /api/download_youtube` - YouTube downloads
+
+**Note:** If `API_KEY` is not set, authentication is disabled (not recommended for production).
+
+#### Rate Limiting
+
+Rate limiting is **enabled by default** to prevent abuse. Configurable via environment variables:
+
+**Global Defaults:**
+- Default: 60 requests/minute per IP
+- Health check: 10 requests/minute
+- Documentation: 30 requests/minute
+
+**API-Specific Limits:**
+- Signal generation: 5 requests/minute
+- File uploads: 10 requests/minute
+- YouTube downloads: 3 requests/minute
+- Progress polling: 120 requests/minute
+
+**Configuration:**
+```bash
+# Disable rate limiting (not recommended)
+RATE_LIMIT_ENABLED=false
+
+# Customize limits
+RATE_LIMIT_DEFAULT=60
+RATE_LIMIT_GENERATE=5
+RATE_LIMIT_UPLOAD=10
+RATE_LIMIT_YOUTUBE=3
+```
+
+**Rate Limit Response:**
+```json
+{
+  "error": "429 Too Many Requests"
+}
+```
+
+#### Resource Limits
+
+**Concurrent Tasks:**
+- Maximum 3 signal generation tasks running simultaneously
+- Additional requests return `429 Too Many Requests`
+- Configurable via `MAX_CONCURRENT_TASKS`
+
+**File Storage:**
+- Music files: Maximum 10 files in memory
+- Oldest files automatically removed when limit exceeded
+- Task data expires after 1 hour (3600 seconds)
+- Configurable via `MAX_MUSIC_FILES` and `TASK_EXPIRATION`
+
+**File Size Limits:**
+- Music uploads: 10MB maximum
+- Cookie files: 1MB maximum
+- Enforced at Flask and endpoint level
+
+#### CORS Configuration
+
+Cross-Origin Resource Sharing (CORS) is configured for security:
+
+**Default:** Allows all origins (`*`) - **not recommended for production**
+
+**Production Configuration:**
+```bash
+# Allow specific domains only
+CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+```
+
+**Single Origin:**
+```bash
+CORS_ORIGINS=https://ultrasonic-sweep.herokuapp.com
+```
+
+#### Input Validation
+
+All user inputs are validated:
+- **YouTube URLs:** Strict regex validation (only youtube.com/youtu.be domains)
+- **File names:** Sanitized using `secure_filename()`
+- **Preset names:** Alphanumeric with underscore only, max 50 characters
+- **Task IDs:** Must be valid UUIDs
+- **File types:** Whitelist validation for music files
+
+#### Error Message Sanitization
+
+Error responses are sanitized to prevent information disclosure:
+- Internal file paths **not exposed**
+- Python version and system details **hidden**
+- Stack traces **logged server-side only**
+- Generic error messages returned to clients
+
+---
+
 ### Error Responses
 
 All endpoints return standard HTTP status codes:
 - `200` - Success
 - `400` - Bad request (invalid parameters)
+- `401` - Unauthorized (missing/invalid API key)
 - `404` - Resource not found
 - `413` - File too large (max 10MB)
+- `429` - Too many requests (rate limit exceeded)
 - `500` - Internal server error
 
 Error response format:
@@ -873,13 +996,45 @@ Error response format:
 }
 ```
 
-### Rate Limiting
+### Security Best Practices
 
-No rate limiting is currently enforced, but consider implementing rate limiting for production deployments to prevent abuse.
+For production deployments:
 
-### CORS
+1. **✅ Enable API Key Authentication**
+   ```bash
+   API_KEY=<strong-random-key>
+   ```
 
-CORS is not enabled by default. For API access from external domains, configure Flask-CORS in `app.py`.
+2. **✅ Configure CORS Restrictions**
+   ```bash
+   CORS_ORIGINS=https://yourdomain.com
+   ```
+
+3. **✅ Keep Rate Limiting Enabled**
+   ```bash
+   RATE_LIMIT_ENABLED=true
+   ```
+
+4. **✅ Set Resource Limits**
+   ```bash
+   MAX_CONCURRENT_TASKS=3
+   MAX_MUSIC_FILES=10
+   TASK_EXPIRATION=3600
+   ```
+
+5. **✅ Use HTTPS Only**
+   - Heroku provides free SSL/TLS
+   - Protects API keys in transit
+
+6. **✅ Monitor Logs**
+   ```bash
+   heroku logs --tail
+   ```
+
+7. **❌ Never Enable Debug Mode in Production**
+   ```bash
+   FLASK_DEBUG=false
+   ```
 
 ## Collaboration & Attribution
 

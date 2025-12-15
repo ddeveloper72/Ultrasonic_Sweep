@@ -4,7 +4,12 @@ UAP Signal Generator Flask Application
 Interactive dashboard for customizing and generating UAP contact signals
 """
 from flask import Flask, render_template, request, jsonify, send_file, Response, stream_with_context
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+from functools import wraps
 import os
 import json
 import numpy as np
@@ -18,18 +23,61 @@ import uuid
 import yt_dlp
 import re
 import tempfile
+import time
+from datetime import datetime, timedelta
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size for music uploads
-app.config['UPLOAD_FOLDER'] = 'source_files'
-app.config['OUTPUT_FOLDER'] = 'generated_signals'
-app.config['COOKIES_FILE'] = 'youtube_cookies.txt'
 
-# Store progress data for each generation task
+# Security Configuration
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 10 * 1024 * 1024))
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'source_files')
+app.config['OUTPUT_FOLDER'] = os.getenv('OUTPUT_FOLDER', 'generated_signals')
+app.config['COOKIES_FILE'] = 'youtube_cookies.txt'
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', os.urandom(32).hex())
+
+# Security settings
+API_KEY = os.getenv('API_KEY', '')
+RATE_LIMIT_ENABLED = os.getenv('RATE_LIMIT_ENABLED', 'true').lower() == 'true'
+MAX_CONCURRENT_TASKS = int(os.getenv('MAX_CONCURRENT_TASKS', 3))
+MAX_MUSIC_FILES = int(os.getenv('MAX_MUSIC_FILES', 10))
+TASK_EXPIRATION = int(os.getenv('TASK_EXPIRATION', 3600))
+
+# CORS Configuration
+cors_origins = os.getenv('CORS_ORIGINS', '*')
+if cors_origins == '*':
+    CORS(app)
+else:
+    CORS(app, origins=cors_origins.split(','))
+
+# Rate Limiter Configuration
+if RATE_LIMIT_ENABLED:
+    limiter = Limiter(
+        app=app,
+        key_func=get_remote_address,
+        default_limits=[f"{os.getenv('RATE_LIMIT_DEFAULT', 60)}/minute"],
+        storage_uri="memory://"
+    )
+else:
+    # Mock limiter that does nothing
+    class MockLimiter:
+        def limit(self, *args, **kwargs):
+            def decorator(f):
+                return f
+            return decorator
+    limiter = MockLimiter()
+
+# Store progress data for each generation task with timestamps
 generation_progress = {}
 
-# Store uploaded music files in memory (filename -> bytes)
+# Store uploaded music files in memory (filename -> {'data': bytes, 'timestamp': datetime})
 uploaded_music_files = {}
+
+# Active task counter
+active_tasks = 0
+tasks_lock = threading.Lock()
 
 # Ensure output directory exists
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
@@ -38,19 +86,70 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'flac', 'm4a'}
 
 
+# Security Middleware
+def require_api_key(f):
+    """Decorator to require API key authentication if configured"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not API_KEY:
+            # API key not configured, allow access
+            return f(*args, **kwargs)
+        
+        # Check for API key in header or query parameter
+        provided_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        
+        if not provided_key or provided_key != API_KEY:
+            return jsonify({'error': 'Unauthorized - Invalid or missing API key'}), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def cleanup_expired_tasks():
+    """Remove expired tasks and files from memory"""
+    current_time = datetime.now()
+    expiration_delta = timedelta(seconds=TASK_EXPIRATION)
+    
+    # Cleanup expired generation tasks
+    expired_tasks = [
+        task_id for task_id, task_data in generation_progress.items()
+        if 'timestamp' in task_data and 
+        current_time - task_data['timestamp'] > expiration_delta
+    ]
+    
+    for task_id in expired_tasks:
+        del generation_progress[task_id]
+    
+    # Cleanup old music files if exceeding limit
+    if len(uploaded_music_files) > MAX_MUSIC_FILES:
+        # Sort by timestamp and remove oldest
+        sorted_files = sorted(
+            uploaded_music_files.items(),
+            key=lambda x: x[1].get('timestamp', datetime.min)
+        )
+        
+        files_to_remove = len(uploaded_music_files) - MAX_MUSIC_FILES
+        for filename, _ in sorted_files[:files_to_remove]:
+            del uploaded_music_files[filename]
+    
+    return len(expired_tasks)
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/health')
+@limiter.limit("10/minute")
 def health():
     """Health check endpoint"""
     import shutil
-    ffmpeg_status = shutil.which('ffmpeg') or 'not found'
+    # Sanitize output - don't reveal full paths
+    ffmpeg_available = bool(shutil.which('ffmpeg'))
     return jsonify({
         'status': 'ok',
-        'ffmpeg': ffmpeg_status,
-        'python': os.sys.version
+        'ffmpeg': 'available' if ffmpeg_available else 'not found',
+        'version': '1.0.0'
     })
 
 
@@ -68,23 +167,26 @@ def documentation():
 
 
 @app.route('/api/documentation')
+@limiter.limit("30/minute")
 def api_documentation():
     """Get markdown documentation content"""
     try:
         with open('README.md', 'r', encoding='utf-8') as f:
             content = f.read()
         return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
-    except Exception as e:
-        return f"Error loading documentation: {str(e)}", 500
+    except Exception:
+        return "Error loading documentation", 500
 
 
 @app.route('/api/presets')
+@limiter.limit("30/minute")
 def api_presets():
     """Get all available presets"""
     return jsonify(get_all_presets())
 
 
 @app.route('/api/preset/<preset_name>')
+@limiter.limit("30/minute")
 def api_preset(preset_name):
     """Get a specific preset configuration"""
     try:
@@ -97,17 +199,34 @@ def api_preset(preset_name):
             return jsonify({'error': 'Preset not found'}), 404
         
         return jsonify(preset)
-    except Exception as e:
-        print(f"Error fetching preset {preset_name}: {str(e)}")
+    except Exception:
         return jsonify({'error': 'Failed to load preset'}), 500
 
 
 @app.route('/api/generate', methods=['POST'])
+@require_api_key
+@limiter.limit(f"{os.getenv('RATE_LIMIT_GENERATE', 5)}/minute")
 def api_generate():
     """Initiate signal generation and return task ID"""
+    global active_tasks
+    
     try:
+        # Cleanup expired tasks first
+        cleanup_expired_tasks()
+        
+        # Check concurrent task limit
+        with tasks_lock:
+            if active_tasks >= MAX_CONCURRENT_TASKS:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached. Please try again later.'
+                }), 429
+            active_tasks += 1
+        
         data = request.json
         if not data:
+            with tasks_lock:
+                active_tasks -= 1
             return jsonify({'status': 'error', 'message': 'No data provided'}), 400
         
         # Validate required fields
@@ -119,13 +238,14 @@ def api_generate():
         task_id = str(uuid.uuid4())
         print(f"[GENERATE] Created task ID: {task_id}")
         
-        # Store task info
+        # Store task info with timestamp
         generation_progress[task_id] = {
             'progress': 0,
             'message': 'Initializing...',
             'status': 'running',
             'result': None,
-            'error': None
+            'error': None,
+            'timestamp': datetime.now()
         }
         
         # Start generation in background thread
@@ -138,17 +258,18 @@ def api_generate():
             'task_id': task_id
         })
         
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"Error starting generation: {error_trace}")
+    except Exception:
+        with tasks_lock:
+            active_tasks -= 1
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': 'Failed to start signal generation'
         }), 500
 
 
 def generate_signal_task(task_id, data):
+    """Background task to generate signal with progress updates"""
+    global active_tasks
     """Background task to generate signal with progress updates"""
     try:
         print(f"[TASK {task_id}] Starting generation task")
@@ -164,7 +285,10 @@ def generate_signal_task(task_id, data):
             if music_file in uploaded_music_files:
                 # Write to temporary file for processing (generator expects file path)
                 temp_music_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(music_file)[1])
-                temp_music_file.write(uploaded_music_files[music_file])
+                # Handle both old format (bytes) and new format (dict)
+                file_info = uploaded_music_files[music_file]
+                file_data = file_info if isinstance(file_info, bytes) else file_info['data']
+                temp_music_file.write(file_data)
                 temp_music_file.close()
                 music_path = temp_music_file.name
                 print(f"[TASK {task_id}] Using music file from memory: {music_file} (temp: {music_path})")
@@ -236,11 +360,17 @@ def generate_signal_task(task_id, data):
                 print(f"[TASK {task_id}] Warning: Failed to cleanup temp file: {cleanup_error}")
         
         generation_progress[task_id]['status'] = 'error'
-        generation_progress[task_id]['error'] = str(e)
-        generation_progress[task_id]['message'] = f'Error: {str(e)}'
+        generation_progress[task_id]['error'] = 'Signal generation failed'
+        generation_progress[task_id]['message'] = 'Error: Signal generation failed'
+    
+    finally:
+        # Decrement active task counter
+        with tasks_lock:
+            active_tasks -= 1
 
 
 @app.route('/api/progress/<task_id>')
+@limiter.limit("120/minute")
 def api_progress(task_id):
     """Stream progress updates via Server-Sent Events"""
     # Validate task_id format (UUID)
@@ -307,6 +437,7 @@ def api_progress(task_id):
 
 
 @app.route('/api/download/<task_id>')
+@limiter.limit("30/minute")
 def api_download(task_id):
     """Download generated signal file from memory"""
     try:
@@ -314,18 +445,18 @@ def api_download(task_id):
         try:
             uuid.UUID(task_id)
         except ValueError:
-            return jsonify({'status': 'error', 'message': 'Invalid task ID format'}), 400
+            return jsonify({'error': 'Invalid task ID format'}), 400
         
         # Check if task exists and has completed
         if task_id not in generation_progress:
-            return jsonify({'status': 'error', 'message': 'Task not found or expired'}), 404
+            return jsonify({'error': 'Task not found or expired'}), 404
         
         task = generation_progress[task_id]
         if task['status'] != 'completed':
-            return jsonify({'status': 'error', 'message': 'Generation not complete'}), 400
+            return jsonify({'error': 'Generation not complete'}), 400
         
         if not task.get('result') or 'mp3_data' not in task['result']:
-            return jsonify({'status': 'error', 'message': 'File data not available'}), 404
+            return jsonify({'error': 'File data not available'}), 404
         
         # Create BytesIO from stored data
         mp3_buffer = io.BytesIO(task['result']['mp3_data'])
@@ -340,12 +471,13 @@ def api_download(task_id):
             download_name=filename
         )
     
-    except Exception as e:
-        print(f"Download error for task {task_id}: {str(e)}")
-        return jsonify({'status': 'error', 'message': 'Failed to download file'}), 500
+    except Exception:
+        return jsonify({'error': 'Failed to download file'}), 500
 
 
 @app.route('/api/upload_music', methods=['POST'])
+@require_api_key
+@limiter.limit(f"{os.getenv('RATE_LIMIT_UPLOAD', 10)}/minute")
 def api_upload_music():
     """Upload music file for signal modulation (stored in memory)"""
     try:
@@ -377,8 +509,14 @@ def api_upload_music():
                 'message': f'File too large ({file_size_mb:.1f}MB). Maximum size is 10MB.'
             }), 400
         
-        # Store in memory
-        uploaded_music_files[filename] = file_data
+        # Cleanup old files if needed
+        cleanup_expired_tasks()
+        
+        # Store in memory with timestamp
+        uploaded_music_files[filename] = {
+            'data': file_data,
+            'timestamp': datetime.now()
+        }
         
         # Get file info by loading from memory
         audio = AudioSegment.from_file(io.BytesIO(file_data))
@@ -392,12 +530,13 @@ def api_upload_music():
             'size_mb': round(file_size_mb, 2)
         })
     
-    except Exception as e:
-        print(f"Upload error: {str(e)}")
+    except Exception:
         return jsonify({'status': 'error', 'message': 'Failed to process uploaded file'}), 500
 
 
 @app.route('/api/upload_cookies', methods=['POST'])
+@require_api_key
+@limiter.limit("5/minute")
 def api_upload_cookies():
     """Upload YouTube cookies file for bypassing bot detection"""
     try:
@@ -408,35 +547,42 @@ def api_upload_cookies():
         if file.filename == '':
             return jsonify({'status': 'error', 'message': 'No file selected'}), 400
         
+        # Validate file size (max 1MB for cookies file)
+        file_data = file.read()
+        if len(file_data) > 1024 * 1024:
+            return jsonify({'status': 'error', 'message': 'Cookies file too large (max 1MB)'}), 400
+        
         # Save the cookies file
         cookies_path = app.config['COOKIES_FILE']
         file.save(cookies_path)
         
         # Validate it's a proper cookies file (should contain youtube.com)
         try:
-            with open(cookies_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                if 'youtube.com' not in content.lower():
-                    os.remove(cookies_path)
-                    return jsonify({
-                        'status': 'error', 
-                        'message': 'Invalid cookies file - must contain YouTube cookies'
-                    }), 400
-        except Exception as e:
-            if os.path.exists(cookies_path):
-                os.remove(cookies_path)
-            return jsonify({'status': 'error', 'message': f'Invalid file format: {str(e)}'}), 400
+            cookies_content = file_data.decode('utf-8')
+            if 'youtube.com' not in cookies_content.lower():
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Invalid cookies file - must contain YouTube cookies'
+                }), 400
+            
+            # Save to file
+            with open(cookies_path, 'wb') as f:
+                f.write(file_data)
+                
+        except Exception:
+            return jsonify({'status': 'error', 'message': 'Invalid file format'}), 400
         
         return jsonify({
             'status': 'success',
             'message': 'Cookies uploaded successfully. YouTube downloads will now use these cookies.'
         })
         
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except Exception:
+        return jsonify({'status': 'error', 'message': 'Failed to upload cookies file'}), 500
 
 
 @app.route('/api/check_cookies', methods=['GET'])
+@limiter.limit("30/minute")
 def api_check_cookies():
     """Check if cookies file exists"""
     cookies_path = app.config['COOKIES_FILE']
@@ -446,6 +592,8 @@ def api_check_cookies():
 
 
 @app.route('/api/download_youtube', methods=['POST'])
+@require_api_key
+@limiter.limit(f"{os.getenv('RATE_LIMIT_YOUTUBE', 3)}/minute")
 def api_download_youtube():
     """Download audio from YouTube URL"""
     try:
@@ -457,11 +605,19 @@ def api_download_youtube():
         
         # Validate YouTube URL
         youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/'
-        if not re.match(youtube_regex, youtube_url):
+        if not youtube_url or len(youtube_url) > 500:
             return jsonify({'status': 'error', 'message': 'Invalid YouTube URL'}), 400
+            
+        # Validate YouTube URL with stricter regex
+        youtube_regex = r'^https?://(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[a-zA-Z0-9_-]{11}.*$'
+        if not re.match(youtube_regex, youtube_url):
+            return jsonify({'status': 'error', 'message': 'Invalid YouTube URL format'}), 400
         
         # Generate unique filename
         video_id = extract_video_id(youtube_url)
+        if not video_id or len(video_id) != 11:
+            return jsonify({'status': 'error', 'message': 'Invalid YouTube video ID'}), 400
+            
         output_filename = f"youtube_{video_id}.mp3"
         output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
         
@@ -574,12 +730,15 @@ def extract_video_id(url):
 
 
 @app.route('/api/list_music')
+@limiter.limit("30/minute")
 def api_list_music():
     """List available music files from memory"""
     files = []
     
-    for filename, file_data in uploaded_music_files.items():
+    for filename, file_info in uploaded_music_files.items():
         try:
+            # Handle both old format (bytes) and new format (dict)
+            file_data = file_info if isinstance(file_info, bytes) else file_info['data']
             audio = AudioSegment.from_file(io.BytesIO(file_data))
             files.append({
                 'filename': filename,
@@ -596,11 +755,19 @@ def api_list_music():
 
 @app.route('/api/waveform/<filename>')
 def api_waveform(filename):
+@app.route('/api/waveform/<filename>')
+@limiter.limit("30/minute")
+def api_waveform(filename):
     """Get waveform data for visualization"""
-    file_path = os.path.join(app.config['OUTPUT_FOLDER'], secure_filename(filename))
+    # Sanitize filename
+    safe_filename = secure_filename(filename)
+    if not safe_filename or safe_filename != filename:
+        return jsonify({'error': 'Invalid filename'}), 400
+        
+    file_path = os.path.join(app.config['OUTPUT_FOLDER'], safe_filename)
     
     if not os.path.exists(file_path):
-        return jsonify({'status': 'error', 'message': 'File not found'}), 404
+        return jsonify({'error': 'File not found'}), 404
     
     try:
         audio = AudioSegment.from_file(file_path)
@@ -611,8 +778,8 @@ def api_waveform(filename):
             'waveform': waveform_data,
             'duration_ms': len(audio)
         })
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Failed to generate waveform'}), 500
 
 
 def get_waveform_data(audio_segment, samples=1000):

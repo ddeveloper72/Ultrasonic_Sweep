@@ -1,6 +1,9 @@
 # UAP Signal Generator - Requirements
 
 flask>=3.0.0
+flask-limiter>=3.5.0
+flask-cors>=4.0.0
+python-dotenv>=1.0.0
 pydub>=0.25.1
 numpy>=1.24.0
 scipy>=1.11.0
