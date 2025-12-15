@@ -88,18 +88,31 @@ ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'wav', 'flac', 'm4a'}
 
 # Security Middleware
 def require_api_key(f):
-    """Decorator to require API key authentication if configured"""
+    """Decorator to require API key authentication if configured
+    
+    API key is optional by default to allow web UI access.
+    Only enforced if API_KEY is set AND request includes Referer header
+    from external domain OR includes api_key parameter.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not API_KEY:
             # API key not configured, allow access
             return f(*args, **kwargs)
         
-        # Check for API key in header or query parameter
+        # Check if request is from the web UI (same origin)
+        referer = request.headers.get('Referer', '')
+        host = request.headers.get('Host', '')
+        
+        # Allow requests from same origin (web UI)
+        if referer and host in referer:
+            return f(*args, **kwargs)
+        
+        # For external API calls, require API key
         provided_key = request.headers.get('X-API-Key') or request.args.get('api_key')
         
         if not provided_key or provided_key != API_KEY:
-            return jsonify({'error': 'Unauthorized - Invalid or missing API key'}), 401
+            return jsonify({'error': 'Unauthorized - API key required for external access'}), 401
         
         return f(*args, **kwargs)
     return decorated_function
