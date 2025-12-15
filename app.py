@@ -754,8 +754,6 @@ def api_list_music():
 
 
 @app.route('/api/waveform/<filename>')
-def api_waveform(filename):
-@app.route('/api/waveform/<filename>')
 @limiter.limit("30/minute")
 def api_waveform(filename):
     """Get waveform data for visualization"""
