@@ -33,6 +33,12 @@ function initializeEventListeners() {
         resetFreqBtn.addEventListener('click', handleResetFrequencies);
     }
 
+    // Reset modulation button
+    const resetModBtn = document.getElementById('resetModBtn');
+    if (resetModBtn) {
+        resetModBtn.addEventListener('click', handleResetModulation);
+    }
+
     // Music switch
     document.getElementById('useMusicSwitch').addEventListener('change', handleMusicSwitchChange);
 
@@ -139,9 +145,35 @@ function handleResetFrequencies() {
             input.value = defaultValue;
         }
     });
-    
+
     // Show brief confirmation
     const resetBtn = document.getElementById('resetFreqBtn');
+    const originalHTML = resetBtn.innerHTML;
+    resetBtn.innerHTML = '<i class="bi bi-check-circle"></i> Reset!';
+    setTimeout(() => {
+        resetBtn.innerHTML = originalHTML;
+    }, 1500);
+}
+
+function handleResetModulation() {
+    // Reset tremolo switch
+    const tremoloSwitch = document.getElementById('tremoloSwitch');
+    const defaultChecked = tremoloSwitch.getAttribute('data-default') === 'true';
+    tremoloSwitch.checked = defaultChecked;
+    
+    // Reset tremolo depth
+    const tremoloDepth = document.getElementById('tremoloDepth');
+    const defaultDepth = tremoloDepth.getAttribute('data-default');
+    if (defaultDepth) {
+        tremoloDepth.value = defaultDepth;
+        document.getElementById('tremoloDepthValue').textContent = defaultDepth;
+    }
+    
+    // Update tremolo settings visibility
+    document.getElementById('tremoloSettings').style.display = defaultChecked ? 'block' : 'none';
+    
+    // Show brief confirmation
+    const resetBtn = document.getElementById('resetModBtn');
     const originalHTML = resetBtn.innerHTML;
     resetBtn.innerHTML = '<i class="bi bi-check-circle"></i> Reset!';
     setTimeout(() => {
