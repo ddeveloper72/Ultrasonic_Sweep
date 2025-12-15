@@ -160,7 +160,7 @@ function handleResetModulation() {
     const tremoloSwitch = document.getElementById('tremoloSwitch');
     const defaultChecked = tremoloSwitch.getAttribute('data-default') === 'true';
     tremoloSwitch.checked = defaultChecked;
-    
+
     // Reset tremolo depth
     const tremoloDepth = document.getElementById('tremoloDepth');
     const defaultDepth = tremoloDepth.getAttribute('data-default');
@@ -168,10 +168,10 @@ function handleResetModulation() {
         tremoloDepth.value = defaultDepth;
         document.getElementById('tremoloDepthValue').textContent = defaultDepth;
     }
-    
+
     // Update tremolo settings visibility
     document.getElementById('tremoloSettings').style.display = defaultChecked ? 'block' : 'none';
-    
+
     // Show brief confirmation
     const resetBtn = document.getElementById('resetModBtn');
     const originalHTML = resetBtn.innerHTML;
