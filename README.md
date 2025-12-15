@@ -655,6 +655,232 @@ Ultrasonic_Sweep/
 └── .venv/                      # Python virtual environment
 ```
 
+## API Reference
+
+The application provides a REST API for programmatic access to signal generation and music integration features.
+
+### Core Endpoints
+
+#### `POST /api/generate`
+Generate a custom UAP signal with specified parameters.
+
+**Request Body:**
+```json
+{
+  "base_frequency": 432,
+  "duration": 300,
+  "amplitude_modulation": true,
+  "am_frequency": 7.83,
+  "am_depth": 0.3,
+  "tremolo": true,
+  "tremolo_rate": 5,
+  "tremolo_depth": 0.5,
+  "music_modulation": true,
+  "music_file": "example.mp3",
+  "music_alpha": 0.3
+}
+```
+
+**Response:**
+```json
+{
+  "task_id": "uuid-string",
+  "message": "Signal generation started"
+}
+```
+
+#### `GET /api/progress/<task_id>`
+Poll the progress of a signal generation task.
+
+**Response:**
+```json
+{
+  "progress": 75,
+  "status": "generating",
+  "message": "Processing: 75% complete"
+}
+```
+
+Status values: `generating`, `complete`, `error`
+
+#### `GET /api/download/<task_id>`
+Download the generated signal file.
+
+**Response:** MP3 audio file stream
+
+---
+
+### Music Integration Endpoints
+
+#### `POST /api/upload_music`
+Upload a music file for signal modulation.
+
+**Request:** Multipart form data with `file` field
+
+**Supported Formats:** MP3, WAV, FLAC, M4A, MP4
+
+**Response:**
+```json
+{
+  "success": true,
+  "filename": "example.mp3",
+  "message": "Music file uploaded successfully"
+}
+```
+
+#### `POST /api/download_youtube`
+Download audio from a YouTube URL.
+
+**Request Body:**
+```json
+{
+  "url": "https://www.youtube.com/watch?v=..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "filename": "video-title.mp3",
+  "message": "YouTube audio downloaded successfully"
+}
+```
+
+#### `GET /api/list_music`
+List all uploaded music files.
+
+**Response:**
+```json
+{
+  "files": [
+    "song1.mp3",
+    "song2.wav",
+    "youtube-download.mp3"
+  ]
+}
+```
+
+#### `GET /api/waveform/<filename>`
+Get waveform data for visualization.
+
+**Response:**
+```json
+{
+  "samples": [0.1, 0.2, -0.1, ...],
+  "sample_rate": 44100,
+  "duration": 180.5
+}
+```
+
+---
+
+### Configuration Endpoints
+
+#### `GET /api/presets`
+Get all available signal presets.
+
+**Response:**
+```json
+{
+  "schumann_pure": {
+    "name": "Schumann Resonance (Pure)",
+    "base_frequency": 7.83,
+    "duration": 300,
+    ...
+  },
+  ...
+}
+```
+
+#### `GET /api/preset/<preset_name>`
+Get a specific preset configuration.
+
+**Response:**
+```json
+{
+  "name": "Schumann Resonance (Pure)",
+  "base_frequency": 7.83,
+  "duration": 300,
+  "amplitude_modulation": false,
+  ...
+}
+```
+
+---
+
+### YouTube Cookie Management
+
+#### `POST /api/upload_cookies`
+Upload YouTube cookies file for accessing age-restricted content.
+
+**Request:** Multipart form data with `file` field (Netscape cookies.txt format)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Cookies file uploaded successfully"
+}
+```
+
+#### `GET /api/check_cookies`
+Check if YouTube cookies file exists.
+
+**Response:**
+```json
+{
+  "exists": true
+}
+```
+
+---
+
+### Utility Endpoints
+
+#### `GET /health`
+Application health check.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "ffmpeg": "/usr/bin/ffmpeg",
+  "python": "3.12.8"
+}
+```
+
+#### `GET /api/documentation`
+Get the raw README.md content.
+
+**Response:** Plain text markdown content
+
+---
+
+### Error Responses
+
+All endpoints return standard HTTP status codes:
+- `200` - Success
+- `400` - Bad request (invalid parameters)
+- `404` - Resource not found
+- `413` - File too large (max 10MB)
+- `500` - Internal server error
+
+Error response format:
+```json
+{
+  "error": "Description of what went wrong"
+}
+```
+
+### Rate Limiting
+
+No rate limiting is currently enforced, but consider implementing rate limiting for production deployments to prevent abuse.
+
+### CORS
+
+CORS is not enabled by default. For API access from external domains, configure Flask-CORS in `app.py`.
+
 ## Collaboration & Attribution
 
 ### Human Contributions (ddeveloper72)
